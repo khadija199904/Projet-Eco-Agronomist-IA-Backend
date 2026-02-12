@@ -36,114 +36,262 @@ Plateforme intelligente de diagnostic phytosanitaire, valorisation post-récolte
 
 ```
 Projet-Eco-Agronomist-IA-Backend/
+├── 📁 .github/                         # CONFIGURATION CI/CD (GitHub Actions)
+│   └── 📁 workflows/
+│       ├── ci-tests.yml                # Tests auto à chaque Push/PR
+│       └── cd-deploy.yml               # Déploiement auto (Docker Build & Push)
 │
-├── 📁 src/                                    # Code source principal
-│   ├── api/                                  # API FastAPI (Phase 4)
-│   │   ├── v1/endpoints/
-│   │   │   ├── detection_diseases.py         # Modèle 1 - Maladies
-│   │   │   ├── detection_anomalies.py        # Modèle 2 - Anomalies
-│   │   │   ├── batch_quality.py              # Qualité lots
-│   │   │   ├── supplier_scoring.py           # Scoring fournisseur
-│   │   │   └── recommendation.py             # RAG - Ordonnance
-│   │   └── schemas/                          # Modèles Pydantic
+├── 📁 src/                                    # Service 1 : CODE SOURCE PRINCIPAL
+│   ├── api/                                   # API FastAPI
+│   │   ├── v1/
+│   │   │   ├── endpoints/                     # Routes (Controllers)
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── health.py
+│   │   │   │   ├── detection_diseases.py
+│   │   │   │   ├── detection_anomalies.py
+│   │   │   │   ├── reports.py
+│   │   │   │   ├── scoring.py
+│   │   │   │   ├── advisor.py                 # RAG
+│   │   │   │   └── auth.py
+│   │   │   │
+│   │   │   ├── services/                      # Logique Métier
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── external/                  # APIs & Cloud
+│   │   │   │   │   ├── __init__.py
+│   │   │   │   │   ├── storage_service.py
+│   │   │   │   │   ├── model_huggingface.py
+│   │   │   │   │   └── mlflow_client.py
+│   │   │   │   └── internal/                  # Orchestration interne
+│   │   │   │       ├── __init__.py
+│   │   │   │       ├── image_analysis.py
+│   │   │   │       └── rag_orchestrator.py
+│   │   │   │
+│   │   │   ├── schemas/                       # Pydantic (Validation)
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── auth.py
+│   │   │   │   ├── detection.py
+│   │   │   │   ├── scoring.py
+│   │   │   │   ├── request.py
+│   │   │   │   └── response.py
+│   │   │   │
+│   │   │   ├── dependencies/                  # Injection de dépendances
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── auth_deps.py
+│   │   │   │   └── service_deps.py
+│   │   │   │
+│   │   │   ├── security/                      # Sécurité & JWT
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── jwt.py
+│   │   │   │   ├── password.py
+│   │   │   │   └── access_control.py
+│   │   │   │
+│   │   │   └── middleware/                    # Intercepteurs
+│   │   │       ├── __init__.py
+│   │   │       ├── logging.py
+│   │   │       └── cors.py
+│   │   │
+│   │   ├── main.py                            # Point d'entrée FastAPI
+│   │   └── utils/
+│   │       ├── __init__.py
+│   │       └── errors.py
 │   │
-│   ├── airflow/                              # Orchestration (Phase 2)
-│   │   ├── dags/
-│   │   │   ├── data_preparation_dag.py       # Pipeline données
-│   │   │   └── training_dag.py               # Pipeline entraînement
-│   │   └── tasks/
-│   │       ├── spark_filtering.py            # Filtrage Agadir
-│   │       ├── spark_preprocessing.py        # Prétraitement 640x640
-│   │       ├── kaggle_export.py              # Export Kaggle
-│   │       └── training_runner.py            # Lancer entraînement
 │   │
-│   ├── ml/                                   # Moteur IA (Phase 3)
-│   │   ├── training/
-│   │   │   ├── disease_detector/             # YOLOv8 Maladies + MLflow
-│   │   │   └── anomaly_detector/             # YOLOv8 Anomalies + MLflow
-│   │   ├── inference/
-│   │   │   ├── disease_predictor.py
+│   ├── ml/                                    # MOTEUR IA
+│   │   ├── training/                          # Scripts pour Kaggle
+│   │   │   ├── disease_detector/
+│   │   │   └── anomaly_detector/
+│   │   ├── inference/                         # Utilisé par l'API (Production)
+│   │   │   ├── disease_predictor.py           # Load model from MLflow
 │   │   │   └── anomaly_predictor.py
-│   │   ├── preprocessing/
-│   │   │   ├── image_processor.py            # Redimensionnement
-│   │   │   └── label_validator.py            # Validation YOLO
-│   │   └── models/                           # Artefacts MLflow
+│   │   └── preprocessing/
+│   │       ├── image_processor.py             # Utils Spark/Inference
+│   │       └── label_validator.py
 │   │
-│   ├── rag/                                  # Système RAG (Phase 3)
-│   │   ├── retriever.py                      # Ingestion PDF
-│   │   ├── generator.py                      # Génération réponses
-│   │   └── knowledge_base/                   # Réglementations ONSSA
+│   ├── rag/                                   # PHASE 3 - SYSTÈME RAG
+│   │   ├── retriever.py                       # Ingestion PDF
+│   │   ├── generator.py                       # LLM Response
+│   │   └── knowledge_base/                    # Docs ONSSA
 │   │
-│   ├── database/                             # Couche données
-│   │   ├── database.py
-│   │   ├── models/                           # ORM models
-│   │   └── repository/
-│   │
+│   ├── database/                              # COUCHE DONNÉES
+│   │   ├── __init__.py
+│   │   ├── database.py                        # Configuration & Engine
+│   │   ├── models/                            # ORM Models (SQLAlchemy)
+│   │   │   ├── __init__.py
+│   │   │   ├── user.py
+│   │   │   ├── supplier.py
+│   │   │   ├── batch.py
+│   │   │   └── detection_result.py
+│   │   └── repository/                        # Design Pattern Repository
+│   │       ├── __init__.py
+│   │       ├── user_repository.py
+│   │       └── detection_repository.py
+│   ├── Dockerfile.api              # Image avec Python + Ultralytics (YOLO)
+│   ├── requirements.txt
 │   └── utils/                                # Utilitaires globaux
 │
-├── 📁 data/                                  # Données
-│   ├── raw/                                  # Données brutes
-│   │   └── pepper.v1i.folder/                # Dataset Agadir
-│   ├── processed/                            # Après prétraitement
-│   │   ├── train_640x640/
-│   │   ├── valid_640x640/
-│   │   └── test_640x640/
-│   ├── models/                               # Modèles MLflow
-│   └── kaggle_exports/                       # Exports Kaggle
+│                               
+├── 📁  airflow/  
+│   ├── Dockerfile.airflow          # Image avec Java 11 + PySpark
+│   ├── requirements-spark.txt                             # Service 2 - ORCHESTRATION (Medallion)
+│   ├── dags/
+│   │   └── medallion_data_pipeline.py     # DAG Principal
+│   └── tasks/
+│       ├── bronze_ingestion.py            # Raw -> Bronze
+│       ├── silver_transformation.py       # Bronze -> Silver (Spark)
+│       ├── gold_finalization.py           # Silver -> Gold (Spark)
+│       └── kaggle_uploader.py             # Export Gold to Kaggle
+├── 📁 data/                                   # STOCKAGE MEDALLION (Local/S3)
+│   ├── raw/                                   # Données brutes
+│   ├── bronze/                                # Landing zone
+│   ├── silver/                                # Données nettoyées (Agadir)
+│   └── gold/                                  # Données ML Ready (Kaggle export)
 │
-├── 📁 notebooks/                             # Kaggle & Expérimentations
-│   ├── disease_training_kaggle.ipynb         # TensorFlow GPU Kaggle
-│   ├── anomaly_training_kaggle.ipynb         # TensorFlow GPU Kaggle
-│   └── mlflow_experiments/                   # Tracking MLflow
+├── 📁 config/                                 # CONFIGURATION
+│   ├── __init__.py
+│   ├── settings.py                            # Load .env (load_dotenv)
+│   ├── mlflow_config.py
+│   └── logging.yaml
 │
+├── 📁 notebooks/                              # EXPÉRIMENTATIONS
+│   ├── disease_training_kaggle.ipynb
+│   └── mlflow_experiments/
+│
+├── 📁 scripts/                                # SCRIPTS UTILITAIRES
+│   ├── init_db.py
+│   └── setup_mlflow.py
+│
+
 ├── 📁 tests/                                 # Tests unitaires & intégration
 │   ├── unit/
 │   └── integration/
 │
-├── 📁 docs/                                  # Documentation
-│   ├── PHASES.md                             # Détail phases
-│   ├── AIRFLOW_SETUP.md                      # Config Airflow
-│   ├── SPARK_PIPELINE.md                     # PySpark pipelines
-│   ├── TRAINING.md                           # Entraînement Kaggle + MLflow
-│   ├── ML_MODELS.md                          # Modèles Vision
-│   ├── RAG_SYSTEM.md                         # Système RAG
-│   ├── API_SPEC.md                           # Documentation API
-│   └── DEPLOYMENT.md
-│
-├── 📁 scripts/                               # Scripts utilitaires
-│   ├── export_to_kaggle.py                   # Exporter données Kaggle
-│   ├── setup_mlflow.py                       # Initialiser MLflow
-│   ├── init_airflow.py                       # Initialiser Airflow
-│   └── init_db.py
-│
-├── 📁 config/                                # Configuration
-│   ├── settings.py
-│   ├── mlflow_config.py                      # MLflow tracking
-│   ├── kaggle_config.py                      # Kaggle API
-│   └── logging.yaml
 │
 ├── 📁 logs/                                  # Logs
 │   ├── airflow/
-│   ├── mlflow/
 │   └── api/
-│
-├── 📄 Configuration principale
-│   ├── pyproject.toml
-│   ├── requirements.txt
-│   ├── requirements-airflow.txt
-│   ├── requirements-spark.txt
-│   ├── requirements-ml.txt                   # TensorFlow, YOLOv8, MLflow
-│   ├── docker-compose.yml
-│   ├── Dockerfile
-│   └── .env.example
-│
-└── 📄 Documentation
-    ├── Jira_Planning_EcoAgronomist.md        # Planification Jira
-    ├── project_description.txt               # Cahier des charges
-    └── LICENSE
+│                                 
+├── 📄 .env.example                  # template Variables d'environnement
+├── 📄 .gitignore
+├── 📄 docker-compose.yml
+└── 📄 README.md
+
 ```
 
 ---
+
+Voici l'architecture complète, finalisée et prête pour la production. Elle intègre les **microservices**, la partie **IA/ML**, l'architecture **Medallion**, ainsi qu'une structure robuste pour les **Tests** et le **CI/CD**.
+
+### 1. Structure Complète du Projet (Monorepo Microservices)
+
+```text
+Projet-Eco-Agronomist-IA-Backend/
+│
+├── 📁 .github/                         # CONFIGURATION CI/CD (GitHub Actions)
+│   └── 📁 workflows/
+│       ├── ci-tests.yml                # Tests auto à chaque Push/PR
+│       └── cd-deploy.yml               # Déploiement auto (Docker Build & Push)
+│
+├── 📁 services/                        # DOSSIER DES MICROSERVICES
+│   │
+│   ├── 📁 data-processing-service/     # MICROSERVICE 1: AIRFLOW + SPARK
+│   │   ├── Dockerfile.airflow          # Image avec Java 11 + PySpark
+│   │   ├── requirements-spark.txt
+│   │   ├── 📁 airflow/
+│   │   │   ├── 📁 dags/                # Pipeline Medallion
+│   │   │   └── 📁 tasks/               # Bronze, Silver, Gold, Kaggle
+│   │   └── 📁 tests/                   # Tests spécifiques au traitement Spark
+│   │
+│   └── 📁 api-inference-service/       # MICROSERVICE 2: FASTAPI + ML + RAG
+│       ├── Dockerfile.api              # Image avec Python + Ultralytics (YOLO)
+│       ├── requirements.txt
+│       ├── main.py                     # Entrée FastAPI
+│       ├── 📁 src/
+│       │   ├── 📁 api/                 # Endpoints, Services, Schemas
+│       │   ├── 📁 ml/                  # Inference (MLflow) & Preprocessing
+│       │   ├── 📁 rag/                 # Retrieval Augmented Generation
+│       │   ├── 📁 database/            # Models & Repositories
+│       │   └── 📁 security/            # JWT & RBAC
+│       └── 📁 tests/                   # Tests API, Unitaires & Intégration
+│
+├── 📁 shared_config/                   # CONFIGURATION PARTAGÉE
+│   ├── settings.py                     # Singleton load_dotenv
+│   └── logging.yaml
+│
+├── 📁 notebooks/                #  LES NOTEBOOKS KAGGLE 
+│   ├── disease_training.ipynb   # Notebook pour l'entraînement des maladies
+│   ├── anomaly_training.ipynb   # Notebook pour l'entraînement des anomalies
+│   └── experiments/             # Tests de modèles, visualisations, etc.
+│
+├── 📁 data/                                   # STOCKAGE MEDALLION                                
+│   ├── bronze/                                # Données brutes
+│   ├── silver/                                # Données nettoyées (Agadir)
+│   └── gold/                                  # Données ML Ready (Kaggle export)/
+│
+├── 📁 scripts/                         # SCRIPTS DE MAINTENANCE GLOBAL
+│   ├── init_db.py
+│   └── seed_data.py
+│
+├── 📄 .env.example                     # Modèle pour l'équipe
+├── 📄 .gitignore                       # Exclut data/, .env, logs/, __pycache__/
+├── 📄 docker-compose.yml               # Orchestrateur local
+├── 📄 pytest.ini                       # Configuration des tests
+└── 📄 README.md
+```
+
+---
+
+### 2. Stratégie de Tests (Qualité Logicielle)
+
+Le dossier `tests/` dans chaque service permet de valider le code avant qu'il n'aille en production.
+
+*   **Unit Tests (Tests Unitaires) :** Tester une fonction seule (ex: `image_processor.py` redimensionne-t-il bien en 640x640 ?).
+*   **Integration Tests (Tests d'Intégration) :** Tester la communication entre l'API et la Base de données ou MLflow.
+*   **ML Tests :** Vérifier que le modèle chargé depuis MLflow renvoie bien un format de dictionnaire valide.
+*   **RAG Tests :** Vérifier que le moteur de recherche trouve bien les bons paragraphes dans les PDFs de l'ONSSA.
+
+---
+
+### 3. Pipeline CI/CD (Automatisation)
+
+Le fichier `.github/workflows/ci-tests.yml` permet d'automatiser la vérification. Voici à quoi ressemble la logique :
+
+```yaml
+name: CI Eco-Agronomist
+
+on: [push, pull_request]
+
+jobs:
+  test-api:
+    runs-on: ubuntu-latest
+    services:
+      postgres: # Lance une DB de test
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: password
+        ports: ["5432:5432"]
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with: {python-version: "3.10"}
+      
+      - name: Install dependencies
+        run: pip install -r services/api-inference-service/requirements.txt pytest
+      
+      - name: Run Pytest
+        run: pytest services/api-inference-service/tests/
+```
+
+---
+
+### 4. Résumé du Workflow de Développement
+
+1.  **Data Processing :** Vous développez vos scripts Spark dans le service `data-factory`. Les tests vérifient que le passage Bronze -> Silver ne perd pas de données.
+2.  **Entraînement :** Vous poussez vos scripts `ml/training` sur **Kaggle**. Le modèle est loggé sur **MLflow**.
+3.  **Inférence :** Vous mettez à jour l'API. Le **CI/CD** lance les tests automatiquement. Si tous les tests passent (vert), l'image Docker est mise à jour.
+4.  **Production :** L'agriculteur utilise le **Frontend**. Le Frontend appelle l'**API-service** qui est toujours testée et stable.
+
 
 ##  Architecture et Phases
 
