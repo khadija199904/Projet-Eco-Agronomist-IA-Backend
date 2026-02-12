@@ -21,7 +21,7 @@ services:
   airflow-init:
     build:
       context: .
-      dockerfile: services/data-processing-service/Dockerfile.airflow
+      dockerfile: data-processing/Dockerfile.airflow
     container_name: airflow_init
     depends_on:
       postgres:
@@ -43,7 +43,7 @@ services:
   airflow:
     build:
       context: .
-      dockerfile: services/data-processing-service/Dockerfile.airflow
+      dockerfile: data-processing/Dockerfile.airflow
     container_name: airflow_spark_service
     restart: always
     depends_on:
