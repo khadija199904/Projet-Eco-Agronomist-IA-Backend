@@ -1,6 +1,9 @@
 .venv
+.env
 data/
 __pycache__
 docs/
+logs/
+
 
 
