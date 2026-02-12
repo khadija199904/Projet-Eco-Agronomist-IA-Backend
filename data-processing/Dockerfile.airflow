@@ -14,7 +14,7 @@ RUN apt-get update && \
 USER airflow
 
 
-COPY requirements-spark.txt .
+COPY data-processing/requirements-spark.txt .
 RUN pip install --no-cache-dir -r requirements-spark.txt
 
 # (Créer les dossiers pour l'architecture Medallion à l'intérieur du conteneur
