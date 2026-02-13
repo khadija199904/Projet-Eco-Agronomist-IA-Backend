@@ -1,21 +1,46 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Float, JSON
+from sqlalchemy import Column, Integer, String,Float, ForeignKey, DateTime,Boolean, JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from src.database.database import Base
+import datetime
 
-class Diagnostic(Base):
-    __tablename__ = "diagnostics"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    parcel_id = Column(Integer, ForeignKey("parcels.id"), nullable=True)
-    image_url = Column(String, nullable=True)
-    prediction_result = Column(JSON, nullable=True) # Store JSON result from AI
-    confidence_score = Column(Float, nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+class PlantDiagnostic(Base):
+    """Diagnostic IA sur plants avant ou pendant la récolte"""
+    __tablename__ = 'plant_diagnostics'
+    id = Column(Integer, primary_key=True)
+    lot_recolte_id = Column(Integer, ForeignKey('lots_recolte.id'))
+    
+    # IA Vision (MobileNet) & LLM
+    disease_detected = Column(String(100))
+    severity_level = Column(String(20))
+    treatment_advice = Column(String(500)) 
+    
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
-    user = relationship("src.database.models.users.User", backref="diagnostics")
-    parcel = relationship("src.database.models.farms.Parcel", backref="diagnostics")
+
+
+
+class DiagnosticProduct(Base):
+    """
+    Diagnostic AVANT emballage (Agréage / Contrôle Qualité).
+    C'est ici que l'IA décide du flux de production.
+    """
+    __tablename__ = 'diagnostic_products'
+    id = Column(Integer, primary_key=True)
+    lot_recolte_id = Column(Integer, ForeignKey('lots_recolte.id'))
+    
+    # --- Sortie du modèle IA (Vision/Scoring) ---
+    visual_defects = Column(JSON) # Détails des anomalies
+    healthy_score = Column(Float) 
+    taux_defauts_visuels = Column(Float) # % de produits abîmés détectés
+    
+    # --- Décision Automatisée ---
+    # Si healthy_score < 0.7 -> 'MECANIQUE' (Pré-tri), sinon 'DIRECT_EMBALLAGE'
+    decision_flux = Column(String(50)) 
+    
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
 
 class Treatment(Base):
     __tablename__ = "treatments"

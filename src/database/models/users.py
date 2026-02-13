@@ -1,41 +1,74 @@
-import enum
-from sqlalchemy import Column, Integer, String, Enum, DateTime
-from sqlalchemy.sql import func
-from src.database.database import Base
-
-class UserRole(str, enum.Enum):
-    ADMIN = "admin"
-    AGRICULTEUR = "agriculteur"
-    RESPONSABLE_QUALITE = "responsable_qualite"
+from sqlalchemy import Column, Integer, String, Enum, ForeignKey, DateTime, Boolean, func
+from sqlalchemy.orm import relationship, backref
+from .base import Base
+from .enums import UserRole
 
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True, nullable=False)
-    email = Column(String, unique=True, index=True, nullable=False)
-    hashed_password = Column(String, nullable=False)
-    role = Column(Enum(UserRole), default=UserRole.AGRICULTEUR, nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String(50), unique=True, index=True, nullable=False)
+    email = Column(String(100), unique=True, index=True, nullable=False)
+    hashed_password = Column(String(255), nullable=False)
+    
+    # --- RÔLE ET STATUT ---
+    role = Column(Enum(UserRole), nullable=False)
+    is_active = Column(Boolean, default=True)
 
-from typing import Optional
-from datetime import datetime
-from sqlalchemy import String, DateTime
-from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase
+    # --- ARCHITECTURE DES ORGANISATIONS (Ferme ou Station) ---
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True)
+    organization = relationship("Organization", back_populates="members")
+
+    # --- HIÉRARCHIE OPÉRATIONNELLE (Chef vs Employé) ---
+    supervisor_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    
+    # Relation pour que le chef puisse voir son équipe
+
+    team_members = relationship(
+        "User",
+        backref=backref("supervisor", remote_side=[id]),
+        cascade="all, delete-orphan"
+    )
 
 
-class User(Base):
-    __tablename__ = "users"
+    # --- DONNÉES DE PROFIL (PWA) ---
+    full_name = Column(String(100), nullable=True)
+    phone = Column(String(20), nullable=True)
+    profile_image_url = Column(String(255), nullable=True)
+    
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    username: Mapped[str] = mapped_column(String(50), unique=True)
-    email: Mapped[str] = mapped_column(String(100), unique=True)
-    password_hash: Mapped[str] = mapped_column(String(255))
-    role: Mapped[str] = mapped_column(String(20)) # 'supplier', 'admin', 'quality_control'
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    # Spécifique Consommateur (points de fidélité, etc.)
+    loyalty_points = Column(Integer, default=0)
 
-    # Configuration pour l'héritage
+    
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    # --- CONFIGURATION POLYMORPHISME (Héritage) ---
     __mapper_args__ = {
+        "polymorphic_on": role,
         "polymorphic_identity": "user",
-        "polymorphic_on": "role",
     }
+
+
+
+
+
+
+# --- SOUS-CLASSES POUR LA LOGIQUE MÉTIER ---
+
+class Admin(User):
+    __mapper_args__ = {"polymorphic_identity": UserRole.ADMIN}
+
+class Agriculteur(User):
+    """Gère aussi bien le propriétaire de la ferme que ses techniciens"""
+    __mapper_args__ = {"polymorphic_identity": UserRole.AGRICULTEUR}
+
+class QualityControl(User):
+    """Gère le chef de station et ses contrôleurs"""
+    __mapper_args__ = {"polymorphic_identity": UserRole.QUALITE}
+
+class Consumer(User):
+    """Utilisateur de l'application mobile de scan/achat"""
+    __mapper_args__ = {"polymorphic_identity": UserRole.CONSOMMATEUR}

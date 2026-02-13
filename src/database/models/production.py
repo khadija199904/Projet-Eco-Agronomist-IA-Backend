@@ -1,37 +1,24 @@
-import enum
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Float, JSON, Enum
-from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
-from src.database.database import Base
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, func
+from database.database import Base
 
-class LotStatus(str, enum.Enum):
-    RECEIVED = "received"
-    PROCESSED = "processed"
-    SHIPPED = "shipped"
+class LotRecolte(Base):
+    """
+    Représente le 'Lot de Récolte' généré par l'Agriculteur[cite: 37, 38].
+    Intègre la paperasse technique de suivi.
+    """
+    __tablename__ = "lots_recolte"
 
-class Lot(Base):
-    __tablename__ = "lots"
-
-    id = Column(Integer, primary_key=True, index=True)
-    parcel_id = Column(Integer, ForeignKey("parcels.id"), nullable=True) # Link to origin parcel
-    harvest_date = Column(DateTime, nullable=True)
-    qr_code = Column(String, unique=True, index=True, nullable=False)
-    quantity_kg = Column(Float, nullable=False)
-    status = Column(Enum(LotStatus), default=LotStatus.RECEIVED)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-
-    parcel = relationship("src.database.models.farms.Parcel", backref="lots")
-
-class QualityCheck(Base):
-    __tablename__ = "quality_checks"
-
-    id = Column(Integer, primary_key=True, index=True)
-    lot_id = Column(Integer, ForeignKey("lots.id"), nullable=False)
-    inspector_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    defects_stats = Column(JSON, nullable=True) # e.g. {"rot": 5, "size_mismatch": 10}
-    quality_score = Column(Float, nullable=True) # 0 to 100
-    check_date = Column(DateTime(timezone=True), server_default=func.now())
-
-    lot = relationship("Lot", backref="quality_checks")
-    inspector = relationship("src.database.models.users.User", backref="inspections")
-
+    id = Column(Integer, primary_key=True)
+    # --- Documents et Suivi (Paperasse Technique) ---
+    num_BL = Column(String(50), unique=True) # Le 'Bon de Livraison' champ
+    code_qr_initial = Column(String(255), unique=True) # QR généré au champ [cite: 38]
+    
+    # --- Données Physiques ---
+    produit_nom = Column(String(100)) # ex: Tomate
+    poids_brut = Column(Float) # Poids avec Pallox
+    poids_net = Column(Float) # Poids marchandise seule
+    nombre_unit_transport = Column(Integer) # Nombre de caisses/pallox
+    
+    date_recolte = Column(DateTime, server_default=func.now())
+    agriculteur_id = Column(Integer, ForeignKey("users.id"))
+    ferme_id = Column(Integer, ForeignKey("organizations.id"))
