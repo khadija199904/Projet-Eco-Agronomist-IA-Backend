@@ -15,7 +15,12 @@ USER airflow
 
 
 COPY data-processing/requirements-spark.txt .
-RUN pip install --no-cache-dir -r requirements-spark.txt
+
+RUN pip install --no-cache-dir \
+    "apache-airflow-providers-apache-spark" \
+    -r requirements-spark.txt \
+    --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.7.1/constraints-3.10.txt"
+
 
 # (Créer les dossiers pour l'architecture Medallion à l'intérieur du conteneur
 RUN mkdir -p /opt/airflow/data/bronze /opt/airflow/data/silver /opt/airflow/data/gold
