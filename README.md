@@ -140,6 +140,7 @@ Projet-Eco-Agronomist-IA-Backend/
 │       ├── silver_transformation.py       # Bronze -> Silver (Spark)
 │       ├── gold_finalization.py           # Silver -> Gold (Spark)
 │       └── kaggle_uploader.py             # Export Gold to Kaggle
+│
 ├── 📁 data/                                   # STOCKAGE MEDALLION (Local/S3)
 │   ├── raw/                                   # Données brutes
 │   ├── bronze/                                # Landing zone
