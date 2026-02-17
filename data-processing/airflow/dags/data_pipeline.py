@@ -11,8 +11,8 @@ if ROOT_DIR not in sys.path:
 
 
 
-from tasks.bronze_ingestion import download_dataset
-from tasks.kaggle_uploader import upload_to_kaggle
+from tasks.bronze_ingestion import ingest_dataset
+from tasks.kaggle_uploader import export_to_kaggle
 
 from airflow.operators.python import PythonOperator
 from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
@@ -21,12 +21,12 @@ SILVER_SCRIPT = os.path.join(ROOT_DIR, "tasks", "silver.py")
 
 
 
-with DAG('medallion_plantdoc', start_date=datetime(2024, 1, 1), schedule=None,catchup=False) as dag:
+with DAG('medallion_plant_disease_v1', start_date=datetime(2024, 1, 1), schedule=None,catchup=False) as dag:
 
     #  BRONZE : Ingestion brute
     ingest_task = PythonOperator(
         task_id='ingest_kaggle_to_bronze',
-        python_callable=download_dataset
+        python_callable=ingest_dataset
     )
     
     # SILVER : Filtrage des plantes d'Agadir (à implémenter)
@@ -40,7 +40,7 @@ with DAG('medallion_plantdoc', start_date=datetime(2024, 1, 1), schedule=None,ca
     #  UPLOAD KAGGLE
     upload_task = PythonOperator(
         task_id='upload_result_to_kaggle',
-        python_callable=upload_to_kaggle
+        python_callable=export_to_kaggle
     )
 
     # Enchaînement des tâches
