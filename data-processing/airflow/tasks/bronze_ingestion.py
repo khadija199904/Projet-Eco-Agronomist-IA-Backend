@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+import shutil
 from kaggle.api.kaggle_api_extended import KaggleApi
 
 def download_dataset():
@@ -15,7 +16,7 @@ def download_dataset():
     
     base_dir = os.path.dirname(os.path.abspath(__file__))
     bronze_path = os.path.join(base_dir, "../data/bronze/plant-doc")
-    dataset_id = "abdulhasibuddin/plant-doc-dataset"
+    dataset_id = "yusufmurtaza01/plantdoc-object-detection-dataset"
 
  
 
@@ -24,7 +25,6 @@ def download_dataset():
     
     api.dataset_download_files(dataset_id, path=bronze_path, unzip=True)
     
-    print(f"Ingestion Bronze terminée. Fichiers stockés dans : {bronze_path}")
 
 if __name__ == "__main__":
     download_dataset ()
