@@ -6,7 +6,7 @@ def export_to_kaggle():
     # 1. Configuration initiale
     SILVER_DIR = "/opt/airflow/data/silver"
     DATASET_SLUG = "agrivision-unified-plant-disease-18-classes"
-    DATASET_TITLE = "AgriVision: Unified Plant Disease Dataset (18 Classes)"
+    DATASET_TITLE = "AgriVision Unified Plant Disease 18 Classes"
     
    
     api = KaggleApi()
