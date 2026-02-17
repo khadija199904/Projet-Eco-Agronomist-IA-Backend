@@ -52,7 +52,7 @@ def standardize_roboflow():
             extension = os.path.splitext(old_name)[1]
             
             # Nouveau nom unique : robo_val_00001, robo_val_00002, etc.
-            new_base_name = f"robo_{dst_split}_{idx:05d}"
+            new_base_name = f"{dst_split}_{idx:05d}"
             new_img_name = new_base_name + extension
             new_lbl_name = new_base_name + ".txt"
             
