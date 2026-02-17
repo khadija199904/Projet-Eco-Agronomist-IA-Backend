@@ -1,24 +1,20 @@
 from airflow import DAG
-
+from airflow.datasets import Dataset
 from datetime import datetime
 import os
 import sys
+from airflow.operators.python import PythonOperator
+from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
 
-# Ensure parent 'airflow' folder is on sys.path so we can import sibling 'tasks' package
+
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
-
-
 from tasks.bronze_ingestion import ingest_dataset
 from tasks.kaggle_uploader import export_to_kaggle
 
-from airflow.operators.python import PythonOperator
-from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
-
 SILVER_SCRIPT = os.path.join(ROOT_DIR, "tasks", "silver.py")
-
 
 
 with DAG('medallion_plant_disease_v1', start_date=datetime(2024, 1, 1), schedule=None,catchup=False) as dag:
