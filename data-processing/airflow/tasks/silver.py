@@ -38,91 +38,74 @@ FINAL_NAMES = {
     16: "Nutrient Deficiencies", 17: "White bugs"
 }
 
+BRONZE_DIR = "/opt/airflow/data/bronze"
+SILVER_DIR = "/opt/airflow/data/silver"
+
+
 # --- 2. LOGIQUE DE FILTRAGE ET RÉINDEXATION (UDF) ---
 
 def filter_and_reindex_udf(content, source):
     if not content: return None
     lines = content.strip().split('\n')
     valid_lines = []
-    
     for line in lines:
         parts = line.split()
         if not parts: continue
-        
         old_id = parts[0]
-        new_id = None
-        
-        # Sélection du dictionnaire selon la provenance
-        if source == "kaggle":
-            new_id = KAG_TO_SILVER.get(old_id)
-        elif source == "roboflow":
-            new_id = ROBO_TO_SILVER.get(old_id)
-            
+        new_id = KAG_TO_SILVER.get(old_id) if source == "kaggle" else ROBO_TO_SILVER.get(old_id)
         if new_id:
             parts[0] = new_id
             valid_lines.append(" ".join(parts))
-            
     return "\n".join(valid_lines) if valid_lines else None
 
-# --- 3. FONCTION DE COPIE PHYSIQUE (WORKERS) ---
-
 def copy_files_to_silver(partition):
-    BRONZE_BASE = "/opt/airflow/data/bronze"
-    SILVER_DIR = "/opt/airflow/data/silver"
     
     for row in partition:
-        source, split, filename, content = row
-        # Correction du nom de split (Roboflow 'valid' -> 'val')
-        target_split = "val" if split == "valid" else split
-        
-        prefix = "k_" if source == "kaggle" else "r_"
-        img_name = filename.replace(".txt", ".jpg")
-        
-        # Source selon le dataset
-        folder_src = "plant-doc" if source == "kaggle" else "roboflow"
-        
-        src_img = os.path.join(BRONZE_BASE, folder_src, split, "images", img_name)
-        dst_img = os.path.join(SILVER_DIR, target_split, "images", f"{prefix}{img_name}")
-        dst_lbl = os.path.join(SILVER_DIR, target_split, "labels", f"{prefix}{filename}")
-        
-        if os.path.exists(src_img):
-            shutil.copy(src_img, dst_img)
-            with open(dst_lbl, "w") as f:
-                f.write(content)
-
-# --- 4. TRAITEMENT PRINCIPAL ---
+            source, split, filename, content = row
+            # On normalise le split pour la destination (au cas où roboflow utiliserait 'valid')
+            target_split = "val" if split in ["val", "valid"] else "train"
+            prefix = "k_" if source == "kaggle" else "r_"
+            img_name = filename.replace(".txt", ".jpg")
+            
+            # Les deux sources ont maintenant la même structure : dataset/images/split/img
+            folder_src = "plant-doc" if source == "kaggle" else "roboflow"
+            src_img = os.path.join(BRONZE_DIR, folder_src, "images", split, img_name)
+            
+            dst_img = os.path.join(SILVER_DIR, target_split, "images", f"{prefix}{img_name}")
+            dst_lbl = os.path.join(SILVER_DIR, target_split, "labels", f"{prefix}{filename}")
+            
+            if os.path.exists(src_img):
+                shutil.copy(src_img, dst_img)
+                with open(dst_lbl, "w") as f:
+                    f.write(content)
 
 def process_silver():
-    BRONZE_DIR = "/opt/airflow/data/bronze"
-    SILVER_DIR = "/opt/airflow/data/silver"
-
-    # A. Nettoyage Driver
+    
     if os.path.exists(SILVER_DIR): shutil.rmtree(SILVER_DIR)
     for s in ['train', 'val']:
         for d in ['images', 'labels']:
             os.makedirs(f"{SILVER_DIR}/{s}/{d}", exist_ok=True)
 
-    # B. Lecture distribuée des deux sources
+    # Lecture adaptée aux deux structures
+    # Kaggle: labels/train/*.txt
     kag_rdd = spark.sparkContext.wholeTextFiles(f"{BRONZE_DIR}/plant-doc/labels/*/*.txt") \
         .map(lambda x: ("kaggle", x[0].split('/')[-2], os.path.basename(x[0]), x[1]))
     
+    # Roboflow: roboflow/train/labels/*.txt
     robo_rdd = spark.sparkContext.wholeTextFiles(f"{BRONZE_DIR}/roboflow/labels/*/*.txt") \
         .map(lambda x: ("roboflow", x[0].split('/')[-2], os.path.basename(x[0]), x[1]))
 
-
-    # Fusion des RDD et conversion en DataFrame
     all_data_df = kag_rdd.union(robo_rdd).toDF(["source", "split", "filename", "raw_content"])
 
-    # C. Application du Filtrage et Mapping
     map_udf = udf(filter_and_reindex_udf, StringType())
     silver_df = all_data_df.withColumn("content", map_udf(col("raw_content"), col("source"))) \
                            .filter(col("content").isNotNull()) \
                            .select("source", "split", "filename", "content")
 
-    # D. Exécution de la copie sur les workers
+    # Important: On déclenche l'action
     silver_df.rdd.foreachPartition(copy_files_to_silver)
 
-    # E. Création du fichier YAML de configuration YOLO
+    #  YAML 
     yaml_content = {
         'path': '/opt/airflow/data/silver',
         'train': 'train/images',
