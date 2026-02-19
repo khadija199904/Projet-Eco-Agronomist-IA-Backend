@@ -5,6 +5,7 @@ from src.database.models.users import USER
 from jose import JWTError, jwt
 from dependencies.db import get_db
 
+
 # verificatin de token crée en login
 def get_current_user (db: Session = Depends(get_db), token : str = Header(...)):
     if token is None:
