@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
 import os
+import urllib.parse
 # import chromadb
 
 # Load environment variables from .env
@@ -28,14 +29,16 @@ MLFLOW_TRACKING_URI =   os.getenv("MLFLOW_TRACKING_URI")
 
 if not DATABASE_URL :
     # Fetch variables
-     USER = os.getenv("user")
-     PASSWORD = os.getenv("password")
-     HOST = os.getenv("host")
-     PORT = os.getenv("port")
-     DBNAME = os.getenv("dbname")
+    USER = os.getenv("DB_USER")
+    PASSWORD = os.getenv("DB_PASSWORD")
+    HOST = os.getenv("DB_HOST")
+    PORT = os.getenv("DB_PORT")
+    DBNAME = os.getenv("DB_NAME")
+    encoded_password = urllib.parse.quote_plus(PASSWORD)
 
      # Construct the SQLAlchemy connection string
-     DATABASE_URL = f"postgresql+psycopg2://{USER}:{PASSWORD}@{HOST}:{PORT}/{DBNAME}?sslmode=require"
+    DATABASE_URL = f"postgresql+psycopg2://{USER}:{encoded_password}@{HOST}:{PORT}/{DBNAME}?sslmode=require"
+
 
 
  # Configuration de JWT
