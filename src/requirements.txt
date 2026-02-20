@@ -1,0 +1,10 @@
+sqlalchemy
+pydantic
+fastapi
+uvicorn
+python-dotenv
+psycopg2-binary
+passlib[argon2]
+python-jose
+pytest
+
