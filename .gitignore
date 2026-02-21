@@ -5,5 +5,9 @@ __pycache__/
 docs/
 logs/
 
+# --- ML & Training ---
+src/ml/runs/
+*.pt
+
 
 

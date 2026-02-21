@@ -8,3 +8,9 @@ passlib[argon2]
 python-jose
 pytest
 
+
+
+# ml
+ultralytics
+onnx
+
