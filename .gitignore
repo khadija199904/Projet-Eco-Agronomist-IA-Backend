@@ -7,7 +7,9 @@ logs/
 
 # --- ML & Training ---
 src/ml/runs/
+src/ml/configml
 *.pt
+
 
 
 
