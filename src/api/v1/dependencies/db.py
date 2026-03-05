@@ -1,5 +1,5 @@
 from src.database.database import SessionLocal
-from sqlalchemy.orm import Session
+
 
 
 # Dépendance pour la base de données
