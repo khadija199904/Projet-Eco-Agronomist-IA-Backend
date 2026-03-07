@@ -47,15 +47,7 @@ def train_eco_agronomist(pole="PRODUCTION", algo="YOLO", dataset_yaml="data.yaml
     print(f"Entraînement terminé. Résultats sauvegardés dans ./results/{project_name}_{algo}")
     return model
 
-# ==========================================================
-# EXEMPLES D'UTILISATION
-# ==========================================================
-if __name__ =   __main__
-# 1. Pour le Pôle Production avec le modèle Transformer (RT-DETR)
-# my_model = train_eco_agronomist(pole="PRODUCTION", algo="RTDETR", epochs=100)
 
-# 2. Pour le Pôle Valorisation avec YOLO Nano (Vitesse PWA)
-# my_model = train_eco_agronomist(pole="VALORISATION", algo="YOLO", epochs=50)
 if __name__ == "__main__":
     # Vérifie si le GPU est disponible
     device = "0" if torch.cuda.is_available() else "cpu"
