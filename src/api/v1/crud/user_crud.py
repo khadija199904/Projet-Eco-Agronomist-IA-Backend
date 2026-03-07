@@ -27,7 +27,6 @@ def update_user(db: Session, user_id: int, user_update: UserUpdate):
     if not db_user:
         raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
 
-    # exclude_unset=True permet de ne récupérer QUE les champs envoyés par le client
     update_data = user_update.model_dump(exclude_unset=True)
 
     for key, value in update_data.items():
