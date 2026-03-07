@@ -37,11 +37,7 @@ class User(Base):
     phone = Column(String(20), nullable=True)
     profile_image_url = Column(String(255), nullable=True)
     
-
-    # Spécifique Consommateur (points de fidélité, etc.)
-    loyalty_points = Column(Integer, default=0)
-
-    
+   
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 

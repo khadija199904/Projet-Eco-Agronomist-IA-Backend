@@ -1,21 +1,23 @@
 from pydantic import EmailStr, BaseModel
 from typing import Optional
-
-
+from src.database.models.enums import UserRole
 
 class UserBase(BaseModel):
     email: EmailStr
     username: str
-    
+    role: UserRole
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+    profile_image_url: Optional[str] = None
+    organization_id: Optional[int] = None
 
 class UserCreate(UserBase):
     password: str
-    
-
 
 class UserOut(UserBase):
     id: int
     is_active: bool
+
     class Config:
         from_attributes = True
 
@@ -23,7 +25,16 @@ class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     username: Optional[str] = None
     password: Optional[str] = None
+    role: Optional[UserRole] = None
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+    profile_image_url: Optional[str] = None
+    organization_id: Optional[int] = None
 
 class UserResponse(BaseModel):
     message: str
     user: UserOut
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
