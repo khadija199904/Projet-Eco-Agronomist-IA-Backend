@@ -1,61 +1,78 @@
 import os
 import torch
-import yaml
-from ultralytics import YOLO
+from ultralytics import YOLO, RTDETR
 
-# ==========================================================
-# 1. CONFIGURATION DU PROJET
-# ==========================================================
-TYPE_ENTRAINEMENT = "PRODUCTION" # ou "VALORISATION"
-
-if TYPE_ENTRAINEMENT == "PRODUCTION":
-    MODEL_TYPE = 'yolov10s.pt'  # Small pour les détails des maladies
-    YAML_PATH = '/kaggle/working/maladies.yaml'
-    PROJECT_NAME = 'EcoAgronomist_Maladies'
-else:
-    MODEL_TYPE = 'yolov10n.pt'  # Nano pour la vitesse sur les fruits
-    YAML_PATH = '/kaggle/working/anomalies.yaml'
-    PROJECT_NAME = 'EcoAgronomist_Anomalies'
-
-OUTPUT_DIR = "/kaggle/working/results"
-
-# ==========================================================
-# 2. PATCH DE SÉCURITÉ PYTORCH 2.6
-# ==========================================================
-import torch.nn as nn
-from ultralytics.nn.modules.conv import Conv
-from ultralytics.nn.modules.block import C2f, Bottleneck, SPPF
-torch.serialization.add_safe_globals([Conv, C2f, Bottleneck, SPPF, nn.modules.container.Sequential])
-
-def safe_load(weights):
-    if not os.path.exists(weights):
-        os.system(f'wget https://github.com/THU-MIG/yolov10/releases/download/v1.1/{weights}')
+def train_eco_agronomist(pole="PRODUCTION", algo="YOLO", dataset_yaml="data.yaml", epochs=50):
+    """
+    Lance l'entraînement selon le pôle et l'algorithme choisis.
+    poles: "PRODUCTION" (Maladies) ou "VALORISATION" (Fruits/Anomalies)
+    algos: "YOLO", "RTDETR", "MOBILENET", "DETECTRON2"
+    """
     
-    original_load = torch.load
-    try:
-        torch.load = lambda *args, **kwargs: original_load(*args, **kwargs, weights_only=False)
-        return YOLO(weights)
-    finally:
-        torch.load = original_load
+    print(f" Initialisation de l'entraînement : Pôle {pole} avec {algo}...")
+    
+    if pole == "PRODUCTION":
+        project_name = "Prod_Maladies"
+        if algo == "YOLO":
+            model_path = 'yolov10s.pt'
+            model = YOLO(model_path)
+        elif algo == "RTDETR":
+            
+            model_path = 'rtdetr-l.pt' 
+            model = RTDETR(model_path)
+        
+    elif pole == "VALORISATION":
+        project_name = "Val_Anomalies"
+        algo == "YOLO"
+        model_path = 'yolov10n.pt' # Nano pour la vitesse mobile
+        model = YOLO(model_path)
+        
+
+    # --- Lancement de l'entraînement ---
+    optimizer = 'AdamW' if algo == "RTDETR" else 'auto'
+    
+    results = model.train(
+        data=dataset_yaml,
+        epochs=epochs,
+        imgsz=640,
+        batch=16,
+        name=f"{project_name}_{algo}",
+        project="./results",
+        device=0, # GPU NVIDIA local
+        optimizer=optimizer,
+        augment=True,
+        exist_ok=True
+    )
+    
+    print(f"Entraînement terminé. Résultats sauvegardés dans ./results/{project_name}_{algo}")
+    return model
 
 # ==========================================================
-# 3. LANCEMENT DE L'ENTRAÎNEMENT
+# EXEMPLES D'UTILISATION
 # ==========================================================
-model = safe_load(MODEL_TYPE)
+if __name__ =   __main__
+# 1. Pour le Pôle Production avec le modèle Transformer (RT-DETR)
+# my_model = train_eco_agronomist(pole="PRODUCTION", algo="RTDETR", epochs=100)
 
-results = model.train(
-    data=YAML_PATH,
-    epochs=50,
-    imgsz=640,
-    batch=16,
-    name=PROJECT_NAME,
-    project=OUTPUT_DIR,
-    device=0,         # GPU T4
-    workers=4,
-    exist_ok=True,
-    optimizer='AdamW', # Très efficace pour les plantes
-    lr0=0.01,         # Taux d'apprentissage initial
-    augment=True      # Active les augmentations (mosaïque, flou) pour le terrain
-)
+# 2. Pour le Pôle Valorisation avec YOLO Nano (Vitesse PWA)
+# my_model = train_eco_agronomist(pole="VALORISATION", algo="YOLO", epochs=50)
+if __name__ == "__main__":
+    # Vérifie si le GPU est disponible
+    device = "0" if torch.cuda.is_available() else "cpu"
+    print(f"Entraînement sur : {device}")
 
-print(f"✅ Entraînement {TYPE_ENTRAINEMENT} terminé !")
+    # Test 1 : Pôle Production avec RT-DETR (Le plus moderne)
+    train_eco_agronomist(
+        pole="PRODUCTION", 
+        algo="RTDETR", 
+        dataset_yaml="maladies.yaml", 
+        epochs=100
+    )
+
+    # Test 2 : Pôle Valorisation avec YOLO Nano (Le plus rapide pour PWA)
+    # train_eco_agronomist(
+    #     pole="VALORISATION", 
+    #     algo="YOLO", 
+    #     dataset_yaml="anomalies.yaml", 
+    #     epochs=50
+    # )
