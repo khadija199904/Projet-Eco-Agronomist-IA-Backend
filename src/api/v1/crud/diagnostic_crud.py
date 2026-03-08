@@ -29,6 +29,9 @@ def get_diagnostics_by_lot(db: Session, lot_id: int):
     # On récupère tous les diagnostics d'un lot spécifique
     return db.query(PlantDiagnostic).filter(PlantDiagnostic.lot_recolte_id == lot_id).all()
 
+def get_plant_diagnostic_by_id(db: Session, diagnostic_id: int):
+    return db.get(PlantDiagnostic, diagnostic_id)
+
 def create_diagnostic_product(db: Session, diagnostic: DiagnosticProductCreate):
     nouveau_diag = DiagnosticProduct(**diagnostic.model_dump())
     db.add(nouveau_diag)
@@ -38,3 +41,6 @@ def create_diagnostic_product(db: Session, diagnostic: DiagnosticProductCreate):
 
 def get_diagnostic_products_by_lot(db: Session, lot_id: int):
     return db.query(DiagnosticProduct).filter(DiagnosticProduct.lot_recolte_id == lot_id).all()
+
+def get_product_diagnostic_by_id(db: Session, diagnostic_id: int):
+    return db.get(DiagnosticProduct, diagnostic_id)
