@@ -9,7 +9,9 @@ logs/
 src/ml/runs/
 src/ml/configml
 *.pt
-
-
+artifacts/models_saved/
+runs/
+mlruns/
+mlflow.db
 
 
