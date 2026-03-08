@@ -13,6 +13,7 @@ EMBEDDING_MODEL_NAME= os.getenv("EMBEDDING_MODEL_NAME")
 VECTOR_DB_DIR = os.getenv("VECTOR_DB_DIR")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 PLANT_MODEL_PATH = os.getenv("PLANT_MODEL_PATH", "artifacts/plants/maladies_plant5_v1.pt")
+VALORISATION_MODEL_PATH = os.getenv("VALORISATION_MODEL_PATH", "artifacts/valorisation/qualite_v1.pt")
 
 # 2 eme methode 
 HF_TOKEN = os.getenv("HF_TOKEN")

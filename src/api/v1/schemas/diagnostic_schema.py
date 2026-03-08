@@ -39,3 +39,22 @@ class PlantDiagnosticResponse(PlantDiagnosticBase):
 
     class Config:
         from_attributes = True
+
+# --- Schémas pour le Diagnostic Qualité (Valorisation / Station) ---
+class DiagnosticProductBase(BaseModel):
+    lot_recolte_id: int
+    image_url: Optional[str] = None
+    visual_defects: Optional[dict] = None # JSON des bounding boxes/anomalies
+    healthy_score: Optional[float] = None
+    taux_defauts_visuels: Optional[float] = None
+    decision_flux: Optional[str] = None # 'MECANIQUE' ou 'DIRECT_EMBALLAGE'
+
+class DiagnosticProductCreate(DiagnosticProductBase):
+    pass
+
+class DiagnosticProductResponse(DiagnosticProductBase):
+    id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
