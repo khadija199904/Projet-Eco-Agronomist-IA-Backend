@@ -3,7 +3,7 @@ from typing import Optional
 from src.database.models.enums import UserRole
 
 class UserBase(BaseModel):
-    email: EmailStr
+    email: str
     username: str
     role: UserRole
     full_name: Optional[str] = None
@@ -22,7 +22,7 @@ class UserOut(UserBase):
         from_attributes = True
 
 class UserUpdate(BaseModel):
-    email: Optional[EmailStr] = None
+    email: Optional[str] = None
     username: Optional[str] = None
     password: Optional[str] = None
     role: Optional[UserRole] = None

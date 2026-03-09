@@ -21,3 +21,10 @@ def create_access_token(user:dict):
     token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
 
     return token
+
+def verify_token(token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        return payload
+    except jwt.ExpiredSignatureError:
+        return None

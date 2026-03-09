@@ -1,3 +1,6 @@
+torch
+torchvision
+ultralytics
 sqlalchemy
 pydantic
 fastapi
@@ -6,6 +9,19 @@ python-dotenv
 psycopg2-binary
 passlib[argon2]
 python-jose
-pytest
 python-multipart
-ultralytics
+
+
+# RAG 
+
+langchain
+langchain-community 
+langchain-core
+langchain-classic 
+pypdf
+langchain-text-splitters
+langchain-huggingface 
+langchain-chroma
+chromadb
+sentence-transformers
+langchain-groq

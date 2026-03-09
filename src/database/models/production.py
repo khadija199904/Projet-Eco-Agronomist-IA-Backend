@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, func
-from database.database import Base
+from src.database.database import Base
 
 class LotRecolte(Base):
     """
