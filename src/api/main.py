@@ -1,0 +1,30 @@
+from fastapi import FastAPI
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+
+from src.api.v1 import routers
+from src.api.v1.middleware.cors import setup_cors
+from src.core.config import settings
+
+app = FastAPI(
+    title=settings.PROJECT_NAME,
+    description="API intelligente de diagnostic phytosanitaire, valorisation post-récolte et traçabilité agricole",
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
+)
+
+setup_cors(app)
+
+app.add_middleware(
+    TrustedHostMiddleware,
+    allowed_hosts=settings.ALLOWED_HOSTS,
+)
+
+PREFIX = settings.PROJECT_V1_STR
+
+app.include_router(routers.auth,          prefix=f"{PREFIX}/auth",         tags=["Auth"])
+app.include_router(routers.diagnostic,    prefix=f"{PREFIX}/diagnostic",   tags=["Diagnostic"])
+app.include_router(routers.lots,          prefix=f"{PREFIX}/lots",         tags=["Lots"])
+app.include_router(routers.valorisation,  prefix=f"{PREFIX}/valorisation", tags=["Valorisation"])
+
+

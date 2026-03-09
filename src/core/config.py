@@ -12,43 +12,40 @@ PDF_PATH = os.getenv("DATA_PATH")
 EMBEDDING_MODEL_NAME= os.getenv("EMBEDDING_MODEL_NAME")
 VECTOR_DB_DIR = os.getenv("VECTOR_DB_DIR")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-PLANT_MODEL_PATH = os.getenv("PLANT_MODEL_PATH", "artifacts/plants/maladies_plant5_v1.pt")
-VALORISATION_MODEL_PATH = os.getenv("VALORISATION_MODEL_PATH", "artifacts/valorisation/qualite_v1.pt")
 
-# 2 eme methode 
-HF_TOKEN = os.getenv("HF_TOKEN")
+class Settings:
+    PROJECT_NAME: str = "Eco Agronomist IA"
+    PROJECT_V1_STR: str = "/api/v1"
+    
+    SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key-here")
+    
 
+    # CORS & Security
+    ALLOWED_ORIGINS: list = ["*"]  
+    ALLOWED_HOSTS: list = ["*"]
 
-# CHROMA CONFIGURATION
-CHROMA_HOST = os.getenv("CHROMA_HOST", "localhost")
-CHROMA_PORT = os.getenv("CHROMA_PORT", "9000")
-COLLECTION_NAME = os.getenv("CHROMA_COLLECTION_NAME", "smartops_collection")
+    # Paths
+    PLANT_MODEL_PATH: str = os.getenv("PLANT_MODEL_PATH", "artifacts/plants/maladies_plant5_v1.pt")
+    VALORISATION_MODEL_PATH: str = os.getenv("VALORISATION_MODEL_PATH", "artifacts/valorisation/qualite_v1.pt")
+    UPLOAD_DIR: str = "uploads/diagnostics"
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+    # Database
+    DATABASE_URL: str = os.getenv("DATABASE_URL")
+    if not DATABASE_URL:
+        USER = os.getenv("DB_USER", "postgres")
+        PASSWORD = os.getenv("DB_PASSWORD", "")
+        HOST = os.getenv("DB_HOST", "localhost")
+        PORT = os.getenv("DB_PORT", "5432")
+        DBNAME = os.getenv("DB_NAME", "eco_agri")
+        encoded_password = urllib.parse.quote_plus(PASSWORD)
+        DATABASE_URL = f"postgresql+psycopg2://{USER}:{encoded_password}@{HOST}:{PORT}/{DBNAME}"
 
-SECRET_KEY = os.getenv("SECRET_KEY")
-MLFLOW_TRACKING_URI =   os.getenv("MLFLOW_TRACKING_URI")
+settings = Settings()
 
-if not DATABASE_URL :
-    # Fetch variables
-    USER = os.getenv("DB_USER")
-    PASSWORD = os.getenv("DB_PASSWORD")
-    HOST = os.getenv("DB_HOST")
-    PORT = os.getenv("DB_PORT")
-    DBNAME = os.getenv("DB_NAME")
-    encoded_password = urllib.parse.quote_plus(PASSWORD)
-
-     # Construct the SQLAlchemy connection string
-    DATABASE_URL = f"postgresql+psycopg2://{USER}:{encoded_password}@{HOST}:{PORT}/{DBNAME}?sslmode=require"
-
-
-
- # Configuration de JWT
-SECRET_KEY = os.getenv("SECRET_KEY")
-
-
-
-
+PLANT_MODEL_PATH = settings.PLANT_MODEL_PATH
+VALORISATION_MODEL_PATH = settings.VALORISATION_MODEL_PATH
+SECRET_KEY = settings.SECRET_KEY
+DATABASE_URL = settings.DATABASE_URL
 
 
 # if __name__ == "__main__":
