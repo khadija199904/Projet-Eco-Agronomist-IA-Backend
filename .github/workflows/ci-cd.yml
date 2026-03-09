@@ -19,6 +19,9 @@ jobs:
         with:
           enable-cache: true # 
 
+      - name: Ensure uv is in PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
       - name: Installation des dépendances
         run: uv sync --frozen
 
