@@ -5,6 +5,7 @@ __pycache__/
 docs/
 logs/
 .python-version
-
+artifacts/
+data_val_scrap.py
 
 
