@@ -107,9 +107,9 @@ services:
       context: .
       dockerfile: src/Dockerfile.api
     container_name: backend_api
-    depends_on:
-      postgres:
-        condition: service_healthy
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     env_file:
       - .env
     volumes:
