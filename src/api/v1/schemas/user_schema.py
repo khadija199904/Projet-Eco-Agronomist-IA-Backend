@@ -9,12 +9,6 @@ class UserBase(BaseModel):
     full_name: Optional[str] = None
     organization_id: Optional[int] = None
 
-    @field_validator("organization_id", mode="before")
-    @classmethod
-    def clean_id(cls, v):
-        if v == 0 or v == "0":
-            return None
-        return v
 
 class UserCreate(UserBase):
     password: str
