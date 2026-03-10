@@ -75,6 +75,8 @@ class ConsumerDiagnostic(Base):
     produit_fini_id = Column(Integer, ForeignKey('produits_finis.id'), nullable=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=True) # Le consommateur (Optionnel)
     
+    user = relationship("User", back_populates="diagnostics")
+    
     # Résultat Scanner Yolo App Mobile
     image_url = Column(String(255), nullable=True) # Photo prise par le smartphone
     freshness_score = Column(Float) # Score de fraîcheur (0 à 1)

@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Enum, ForeignKey, DateTime, Boolean, func
-from sqlalchemy.orm import relationship, backref
-from ..database import Base
-from .enums import UserRole
+from sqlalchemy.orm import relationship, backref, validates
+from src.database.database import Base
+from src.database.models.enums import UserRole
 
 class User(Base):
     __tablename__ = "users"
@@ -24,7 +24,6 @@ class User(Base):
     supervisor_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     
     # Relation pour que le chef puisse voir son équipe
-
     team_members = relationship(
         "User",
         backref=backref("supervisor", remote_side=[id]),
@@ -34,14 +33,20 @@ class User(Base):
 
     # --- DONNÉES DE PROFIL (PWA) ---
     full_name = Column(String(100), nullable=True)
-    phone = Column(String(20), nullable=True)
-    profile_image_url = Column(String(255), nullable=True)
     
-   
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
-    # --- CONFIGURATION POLYMORPHISME (Héritage) ---
+    # --- VALIDATION (Kill 0 values) ---
+    @validates("organization_id", "supervisor_id")
+    def validate_ids(self, key, value):
+        if value == 0 or value == "0":
+            return None
+        return value
+
+    # --- RELATIONSHIPS ---
+    diagnostics = relationship("ConsumerDiagnostic", back_populates="user")
+
     __mapper_args__ = {
         "polymorphic_on": role,
         "polymorphic_identity": "user",
@@ -55,16 +60,26 @@ class User(Base):
 # --- SOUS-CLASSES POUR LA LOGIQUE MÉTIER ---
 
 class Admin(User):
+    """Administrateur du système avec accès global"""
     __mapper_args__ = {"polymorphic_identity": UserRole.ADMIN}
 
 class Agriculteur(User):
-    """Gère aussi bien le propriétaire de la ferme que ses techniciens"""
+    """Gère aussi bien le propriétaire de la ferme que ses techniciens.
+    Lié aux lots de récolte et aux diagnostics de plantes.
+    """
     __mapper_args__ = {"polymorphic_identity": UserRole.AGRICULTEUR}
+    
+    # Relation vers les lots produits par cet agriculteur
+    lots = relationship("LotRecolte", back_populates="agriculteur")
 
 class QualityControl(User):
     """Gère le chef de station et ses contrôleurs"""
     __mapper_args__ = {"polymorphic_identity": UserRole.QUALITE}
 
 class Consumer(User):
-    """Utilisateur de l'application mobile de scan/achat"""
+    """Utilisateur de l'application mobile de scan/achat.
+    Conserve l'historique de ses diagnostics de fraîcheur.
+    """
     __mapper_args__ = {"polymorphic_identity": UserRole.CONSOMMATEUR}
+    
+    # Historique des diagnostics personnels (Moved to User to avoid mapper errors)

@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, func
 from src.database.database import Base
+from sqlalchemy.orm import relationship
 
 class LotRecolte(Base):
     """
@@ -22,3 +23,6 @@ class LotRecolte(Base):
     date_recolte = Column(DateTime, server_default=func.now())
     agriculteur_id = Column(Integer, ForeignKey("users.id"))
     ferme_id = Column(Integer, ForeignKey("organizations.id"))
+
+    agriculteur = relationship("User", foreign_keys=[agriculteur_id])
+    ferme = relationship("Organization", foreign_keys=[ferme_id])

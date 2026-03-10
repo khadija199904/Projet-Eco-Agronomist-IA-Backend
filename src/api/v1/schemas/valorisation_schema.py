@@ -29,7 +29,7 @@ class TraitementStationUpdate(BaseModel):
 class QualiteCheckResult(BaseModel):
     lot_id: int
     taux_conformite: float
-    defauts_detectes: Dict[str, int]
+    defauts_detectes: dict[str, int]
     decision_suggeree: str # 'DIRECT_EMBALLAGE' ou 'MECANIQUE'
     image_url: Optional[str] = None
 
@@ -37,7 +37,7 @@ class LotQualityReport(BaseModel):
     lot_id: int
     nb_scans: int
     taux_conformite_moyen: float
-    defauts_frequents: Dict[str, int]
+    defauts_frequents: dict[str, int]
     decision_finale: Optional[str] = None
     is_finalized: bool = False
     date_rapport: datetime

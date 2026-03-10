@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
-
+from src.database.database import Base,engine
 from src.api.v1 import routers
 from src.api.v1.middleware.cors import setup_cors
 from src.core.config import settings
@@ -13,12 +13,13 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-setup_cors(app)
+Base.metadata.create_all(bind=engine)
+# setup_cors(app)
 
-app.add_middleware(
-    TrustedHostMiddleware,
-    allowed_hosts=settings.ALLOWED_HOSTS,
-)
+# app.add_middleware(
+#     TrustedHostMiddleware,
+#     allowed_hosts=settings.ALLOWED_HOSTS,
+# )
 
 PREFIX = settings.PROJECT_V1_STR
 

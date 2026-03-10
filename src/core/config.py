@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 import os
 import urllib.parse
+
 # import chromadb
 
 # Load environment variables from .env
@@ -32,13 +33,15 @@ class Settings:
     # Database
     DATABASE_URL: str = os.getenv("DATABASE_URL")
     if not DATABASE_URL:
-        USER = os.getenv("DB_USER", "postgres")
-        PASSWORD = os.getenv("DB_PASSWORD", "")
-        HOST = os.getenv("DB_HOST", "localhost")
-        PORT = os.getenv("DB_PORT", "5432")
-        DBNAME = os.getenv("DB_NAME", "eco_agri")
+        USER = os.getenv("DB_USER").strip()
+        PASSWORD = os.getenv("DB_PASSWORD").strip()
+        HOST = os.getenv("DB_HOST").strip()
+        PORT = os.getenv("DB_PORT").strip()
+        DBNAME = os.getenv("DB_NAME").strip()
         encoded_password = urllib.parse.quote_plus(PASSWORD)
-        DATABASE_URL = f"postgresql+psycopg2://{USER}:{encoded_password}@{HOST}:{PORT}/{DBNAME}"
+        DATABASE_URL = f"postgresql://{USER}:{encoded_password}@{HOST}:{PORT}/{DBNAME}?sslmode=require"
+
+
 
 settings = Settings()
 
@@ -48,7 +51,14 @@ SECRET_KEY = settings.SECRET_KEY
 DATABASE_URL = settings.DATABASE_URL
 
 
-# if __name__ == "__main__":
+if __name__ == "__main__":
+    from sqlalchemy import create_engine
+    engine = create_engine(DATABASE_URL)
+    try:
+        with engine.connect() as connection:
+            print("Connection successful!")
+    except Exception as e:
+        print(f"Failed to connect: {e}")
 #   try:
 #     client = chromadb.HttpClient(host=CHROMA_HOST, port=CHROMA_PORT )
 #     print(f"Connecté au serveur Chroma sur {CHROMA_HOST}:{CHROMA_PORT }")

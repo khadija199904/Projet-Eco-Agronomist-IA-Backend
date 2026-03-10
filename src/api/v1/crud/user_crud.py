@@ -1,39 +1,60 @@
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
+from fastapi import HTTPException, status
 from src.core.security import password_hash
 from src.database.models.users import User
 from src.api.v1.schemas.user_schema import UserCreate, UserUpdate
-from fastapi import HTTPException
 
 def create_user(db: Session, user: UserCreate):
-    hashed_password = password_hash(user.password)
-    new_user = User(
-        email=user.email,
-        username=user.username,
-        hashed_password=hashed_password,
-        role=user.role,
-        full_name=user.full_name,
-        phone=user.phone,
-        profile_image_url=user.profile_image_url,
-        organization_id=user.organization_id
-    )
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    return new_user 
+    # 1. On transforme le schéma en dictionnaire
+    user_data = user.model_dump(exclude={"password"})
+    
+    # 2. NETTOYAGE CRUCIAL : 
+    # Pour éviter l'erreur ForeignKeyViolation si Swagger envoie 0 par défaut
+    if user_data.get("organization_id") == 0 or user_data.get("organization_id") == "0":
+        user_data["organization_id"] = None
 
+    hashed_password = password_hash(user.password)
+    
+    # 3. Création de l'objet SQLAlchemy
+    new_user = User(
+        **user_data, 
+        hashed_password=hashed_password
+    )
+    
+    try:
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+        return new_user
+    except IntegrityError as e:
+        db.rollback()
+        # On attrape l'erreur pour t'expliquer ce qui ne va pas si ça échoue encore
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Erreur d'intégrité : {str(e.orig)}"
+        )
 def update_user(db: Session, user_id: int, user_update: UserUpdate):
     db_user = db.query(User).filter(User.id == user_id).first()
     
     if not db_user:
         raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
 
+    # exclude_unset=True est crucial pour ne pas écraser les champs par du null
     update_data = user_update.model_dump(exclude_unset=True)
 
     for key, value in update_data.items():
         if key == "password":
             setattr(db_user, "hashed_password", password_hash(value))
+        elif key == "organization_id" and (value == 0 or value == "0"):
+            setattr(db_user, "organization_id", None)
         else:
             setattr(db_user, key, value)
-    db.commit()
-    db.refresh(db_user)
-    return db_user
+            
+    try:
+        db.commit()
+        db.refresh(db_user)
+        return db_user
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Mise à jour impossible : conflit de données (email/username)")
