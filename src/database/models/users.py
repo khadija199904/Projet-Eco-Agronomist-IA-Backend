@@ -20,15 +20,7 @@ class User(Base):
     organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True)
     organization = relationship("Organization", back_populates="members")
 
-    # --- HIÉRARCHIE OPÉRATIONNELLE (Chef vs Employé) ---
-    supervisor_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    
-    # Relation pour que le chef puisse voir son équipe
-    team_members = relationship(
-        "User",
-        backref=backref("supervisor", remote_side=[id]),
-        cascade="all, delete-orphan"
-    )
+
 
 
     # --- DONNÉES DE PROFIL (PWA) ---
@@ -37,12 +29,7 @@ class User(Base):
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
-    # --- VALIDATION (Kill 0 values) ---
-    @validates("organization_id", "supervisor_id")
-    def validate_ids(self, key, value):
-        if value == 0 or value == "0":
-            return None
-        return value
+    
 
     # --- RELATIONSHIPS ---
     diagnostics = relationship("ConsumerDiagnostic", back_populates="user")
