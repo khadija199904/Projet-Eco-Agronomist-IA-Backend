@@ -6,9 +6,8 @@ from jose import JWTError, jwt
 from src.api.v1.dependencies.db import get_db
 from fastapi.security import OAuth2PasswordBearer
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
-# verificatin de token crée en login
 def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
     
     try:

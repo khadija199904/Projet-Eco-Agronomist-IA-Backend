@@ -6,17 +6,13 @@ from src.database.models.users import User
 from src.api.v1.schemas.user_schema import UserCreate, UserUpdate
 
 def create_user(db: Session, user: UserCreate):
-    # 1. On transforme le schéma en dictionnaire
     user_data = user.model_dump(exclude={"password"})
     
-    # 2. NETTOYAGE CRUCIAL : 
-    # Pour éviter l'erreur ForeignKeyViolation si Swagger envoie 0 par défaut
     if user_data.get("organization_id") == 0 or user_data.get("organization_id") == "0":
         user_data["organization_id"] = None
 
     hashed_password = password_hash(user.password)
     
-    # 3. Création de l'objet SQLAlchemy
     new_user = User(
         **user_data, 
         hashed_password=hashed_password
@@ -29,18 +25,18 @@ def create_user(db: Session, user: UserCreate):
         return new_user
     except IntegrityError as e:
         db.rollback()
-        # On attrape l'erreur pour t'expliquer ce qui ne va pas si ça échoue encore
+
         raise HTTPException(
             status_code=400, 
             detail=f"Erreur d'intégrité : {str(e.orig)}"
         )
+
 def update_user(db: Session, user_id: int, user_update: UserUpdate):
     db_user = db.query(User).filter(User.id == user_id).first()
     
     if not db_user:
         raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
 
-    # exclude_unset=True est crucial pour ne pas écraser les champs par du null
     update_data = user_update.model_dump(exclude_unset=True)
 
     for key, value in update_data.items():
