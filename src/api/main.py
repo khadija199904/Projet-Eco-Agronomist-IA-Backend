@@ -23,9 +23,9 @@ Base.metadata.create_all(bind=engine)
 
 PREFIX = settings.PROJECT_V1_STR
 
-app.include_router(routers.auth,          prefix=f"{PREFIX}/auth",         tags=["Auth"])
-app.include_router(routers.diagnostic,    prefix=f"{PREFIX}/diagnostic",   tags=["Diagnostic"])
-app.include_router(routers.lots,          prefix=f"{PREFIX}/lots",         tags=["Lots"])
-app.include_router(routers.valorisation,  prefix=f"{PREFIX}/valorisation", tags=["Valorisation"])
+app.include_router(routers.auth,          prefix=f"{PREFIX}/auth",         tags=["Authentification"])
+app.include_router(routers.diagnostic,    prefix=f"{PREFIX}/diagnostic",   tags=["IA Diagnostic"])
+app.include_router(routers.production,    prefix=f"{PREFIX}/production",   tags=["Production & Traçabilité Agricole"])
+app.include_router(routers.valorisation,  prefix=f"{PREFIX}/valorisation", tags=["Valorisation - Traitement Station"])
 
 

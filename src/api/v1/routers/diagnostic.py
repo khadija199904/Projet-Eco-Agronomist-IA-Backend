@@ -16,7 +16,7 @@ from src.database.models.users import User
 from src.database.models.enums import UserRole
 from src.core.security import verify_token
 
-router = APIRouter(prefix="/diagnostics", tags=["IA Diagnostic"])
+router = APIRouter()
 
 @router.post("/upload", summary="Analyser une image (Plante ou Produit)")
 async def upload_and_diagnose(

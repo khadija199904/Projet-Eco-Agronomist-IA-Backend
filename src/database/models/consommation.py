@@ -16,13 +16,10 @@ class ProduitFini(Base):
     date_emballage = Column(DateTime, server_default=func.now())
     type_conditionnement = Column(String(100)) 
     
-    # Lien avec l'historique d'achat [cite: 22]
     consommateur_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     
-    # Autres attributs de la deuxième définition
     calibre = Column(String(50))
     station_id = Column(Integer, ForeignKey("organizations.id"))
     
-    # Résultats du contrôle qualité usine [cite: 83]
     score_qualite = Column(Float)
     rapport_inspection_url = Column(String(255)) # [cite: 94, 103]

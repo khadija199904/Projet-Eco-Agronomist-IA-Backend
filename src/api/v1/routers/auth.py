@@ -9,7 +9,7 @@ from src.api.v1.dependencies.user import get_current_user
 from fastapi.security import OAuth2PasswordRequestForm
 from src.database.models.organization import Organization
 
-router = APIRouter(prefix="/auth", tags=["Authentification"])
+router = APIRouter()
 
 @router.post('/register', response_model=UserResponse)
 async def register(user: UserCreate, db: Session = Depends(get_db)):
