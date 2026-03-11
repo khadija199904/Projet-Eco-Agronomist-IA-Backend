@@ -1,9 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
-from typing import Optional
-import json
-import base64
-
 from src.api.v1.dependencies.db import get_db
 from src.api.v1.dependencies.user import get_current_user
 from src.api.v1.schemas.diagnostic_schema import (
@@ -36,23 +32,20 @@ async def upload_and_diagnose(
     if diag_type == "plante":
         if user.role != UserRole.AGRICULTEUR:
             raise HTTPException(status_code=403, detail="Réservé aux agriculteurs.")
-        
-        try:
-            image_path = await diagnostic_service.save_upload_file(file)
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Erreur sauvegarde : {e}")
 
-        disease, severity, advice, detection_details = diagnostic_service.run_prediction(image_path)
         
+        image_bytes = await file.read()
+        disease, advice, detection_details = diagnostic_service.run_prediction(image_bytes)
         diag_create = PlantDiagnosticCreate(
             lot_recolte_id=lot_recolte_id,
             disease_detected=disease,
-            severity_level=severity,
-            treatment_advice=advice,
-            detection_details=detection_details
+            treatment_advice=advice or "Aucun conseil disponible pour le moment.",
+            detection_details=detection_details 
         )
-        return diagnostic_crud.create_plant_diagnostic(db, diag_create)
 
+        new_diagnostic = diagnostic_crud.create_plant_diagnostic(db, diag_create)
+        
+        return new_diagnostic
     elif diag_type == "produit":
         if user.role not in [UserRole.QUALITE, UserRole.ADMIN]:
             raise HTTPException(status_code=403, detail="Réservé aux contrôleurs qualité.")
