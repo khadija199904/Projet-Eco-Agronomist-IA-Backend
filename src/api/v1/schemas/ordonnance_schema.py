@@ -1,19 +1,19 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 
-class TreatmentBase(BaseModel):
-    product_used: str
-    dosage: str
-    dar_days: Optional[int] = None 
+class TreatmentRAGBase(BaseModel):
+    nom_maladie: str
+    recommandation: str
+    sources_utilisees: Optional[str] = None
 
-class TreatmentCreate(TreatmentBase):
-    pass
+class TreatmentRAGCreate(TreatmentRAGBase):
+    diagnostic_id: int
 
-class TreatmentResponse(TreatmentBase):
+class TreatmentRAGResponse(TreatmentRAGBase):
     id: int
     diagnostic_id: int
-    application_date: datetime
+    date_creation: datetime
 
-    class Config:
-        from_attributes = True
+
+    model_config = ConfigDict(from_attributes=True)
