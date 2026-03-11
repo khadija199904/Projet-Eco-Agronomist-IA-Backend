@@ -7,7 +7,7 @@ from src.core.security import verify_password_hash, create_access_token
 from src.api.v1.dependencies.db import get_db
 from src.api.v1.dependencies.user import get_current_user
 from fastapi.security import OAuth2PasswordRequestForm
-from src.database.models.organization import Organization
+from src.database.models.organization_table import Organization
 
 router = APIRouter()
 
