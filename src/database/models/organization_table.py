@@ -14,3 +14,4 @@ class Organization(Base):
     
     # Lien vers les employés (Agriculteurs ou Contrôleurs)
     members = relationship("User", back_populates="organization")
+    diagnostics = relationship("UniversalDiagnostic", back_populates="organization")
