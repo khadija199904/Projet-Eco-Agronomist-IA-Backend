@@ -6,14 +6,17 @@ from datetime import datetime
 from src.api.v1.dependencies.db import get_db
 from src.api.v1.dependencies.user import get_current_user
 from src.database.models.users import User
-from src.database.models.enums import UserRole
+from src.database.models.enums import UserRole, DiagnosticType
+from src.api.v1.schemas.diagnostic_schema import (
+    ProductDiagnosticCreate
+)
 from src.api.v1.schemas.valorisation_schema import (
     TraitementStationCreate, TraitementStationResponse, 
     QualiteCheckResult, LotQualityReport, TraitementStationUpdate
 )
 from src.api.v1.crud import valorisation_crud, diagnostic_crud
 from src.api.v1.services import diagnostic_service
-from src.database.models.diagnostics_table import DiagnosticProduct
+from src.database.models.diagnostics_table import UniversalDiagnostic
 
 router = APIRouter()
 
@@ -33,7 +36,7 @@ async def check_quality(
     defects, score, taux, decision, detection_details = diagnostic_service.run_valorisation_prediction(image_path)
 
     # 2. Enregistrement automatique du scan dans l'historique diagnostic
-    diag_create = diagnostic_crud.DiagnosticProductCreate(
+    diag_create = ProductDiagnosticCreate(
         lot_recolte_id=lot_id,
         image_url=image_path,
         visual_defects=defects,
@@ -59,7 +62,10 @@ def get_quality_report(
     user: User = Depends(get_current_user)
 ):
     """Génère un rapport de synthèse basé sur tous les scans du lot."""
-    scans = db.query(DiagnosticProduct).filter(DiagnosticProduct.lot_recolte_id == lot_id).all()
+    scans = db.query(UniversalDiagnostic).filter(
+        UniversalDiagnostic.lot_recolte_id == lot_id,
+        UniversalDiagnostic.diag_type == DiagnosticType.PRODUCT
+    ).all()
     if not scans:
         raise HTTPException(status_code=404, detail="Aucun scan trouvé pour ce lot.")
 
