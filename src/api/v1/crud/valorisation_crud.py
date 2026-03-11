@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from src.database.models.valorisation import TraitementStation
+from src.database.models.valorisation_table import TraitementStation
 from src.api.v1.schemas.valorisation_schema import TraitementStationCreate
 from datetime import datetime
 
