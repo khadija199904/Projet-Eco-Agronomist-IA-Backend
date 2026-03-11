@@ -1,7 +1,7 @@
 
 from .users import User, Admin, Agriculteur, QualityControl, Consumer
-from .organization import Organization
-from .production import LotRecolte
-from .diagnostics import PlantDiagnostic, Treatment, DiagnosticProduct, ConsumerDiagnostic
-from .valorisation import TraitementStation
-from .consommation import ProduitFini
+from .organization_table import Organization
+from .production_table import LotRecolte
+from .diagnostics_table import PlantDiagnostic,TreatmentRAG, DiagnosticProduct, ConsumerDiagnostic
+from .valorisation_table import TraitementStation
+from .consommation_table import ProduitFini
