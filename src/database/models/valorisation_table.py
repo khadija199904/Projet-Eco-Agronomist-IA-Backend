@@ -14,12 +14,12 @@ class TraitementStation(Base):
     
     # --- Diagnostic & Qualité (Agréage) ---
     date_agreage = Column(DateTime)
-    score_homogeneite = Column(Float)  # Issu de l'IA (0 à 1) : décide du flux
-    besoin_tri_mecanique = Column(Boolean) # True si score faible (Fayaje complexe)
+    score_homogeneite = Column(Float)  
+    besoin_tri_mecanique = Column(Boolean) 
     
     # --- Mesures Physico-Chimiques ---
     calibre = Column(String(20)) 
     
     # --- Résultat & Logistique ---
-    poids_ecart = Column(Float)  # Quantité de déchets/écarts
-    is_export = Column(Boolean, default=False) # Décision finale
+    poids_ecart = Column(Float)  
+    is_export = Column(Boolean, default=False) 

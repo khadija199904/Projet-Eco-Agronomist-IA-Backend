@@ -16,18 +16,17 @@ class PlantDiagnostic(Base):
     # Résultat Scanner Yolo
     image_url = Column(String(255), nullable=True) # Photo prise par l'agriculteur
     disease_detected = Column(String(100))
-    severity_level = Column(String(20))
     treatment_advice = Column(String(500)) 
     
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     
     # La plante est malade
-    treatments = relationship("Treatment", back_populates="diagnostic", cascade="all, delete-orphan")
+    treatments = relationship("TreatmentRAG", back_populates="diagnostic", cascade="all, delete-orphan")
 
-
-class Treatment(Base):
+# ORDONNANCE DE TRAITEMENT RAG
+class TreatmentRAG(Base):
     """Les produits appliqués SUITE à un PlantDiagnostic (Ferme)"""
-    __tablename__ = "treatments"
+    __tablename__ = "treatmentrag"
 
     id = Column(Integer, primary_key=True, index=True)
     diagnostic_id = Column(Integer, ForeignKey("plant_diagnostics.id"), nullable=False)
@@ -44,7 +43,6 @@ class Treatment(Base):
 class DiagnosticProduct(Base):
     """
     Diagnostic IA (Yolo/Computer Vision) AVANT emballage.
-    Caméra au-dessus du tapis roulant (Tri optique).
     """
     __tablename__ = 'diagnostic_products'
     
