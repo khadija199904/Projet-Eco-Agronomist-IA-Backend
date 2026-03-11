@@ -13,7 +13,7 @@ from src.api.v1.schemas.valorisation_schema import (
 )
 from src.api.v1.crud import valorisation_crud, diagnostic_crud
 from src.api.v1.services import diagnostic_service
-from src.database.models.diagnostics import DiagnosticProduct
+from src.database.models.diagnostics_table import DiagnosticProduct
 
 router = APIRouter()
 
