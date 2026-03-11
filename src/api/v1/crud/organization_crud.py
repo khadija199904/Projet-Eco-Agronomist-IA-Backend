@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException
-from src.database.models.organization import Organization
+from src.database.models.organization_table import Organization
 from src.api.v1.schemas.organization_schema import OrganizationCreate, OrganizationUpdate
 
 def create_organization(db: Session, org_in: OrganizationCreate):
