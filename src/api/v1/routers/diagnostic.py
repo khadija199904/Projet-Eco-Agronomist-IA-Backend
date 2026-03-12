@@ -49,12 +49,19 @@ async def upload_and_diagnose(
 
         
         image_bytes = await file.read()
-        disease, advice, detection_details = diagnostic_service.run_prediction(image_bytes)
+        disease_fr, det_details, pathologies_fr = diagnostic_service.run_prediction(image_bytes)
+
+        try:
+            advice = await diagnostic_service.generate_plant_advice(pathologies_fr)
+        except Exception:
+            advice = "Conseil temporairement indisponible."
+
+        # 3. Sauvegarde DB
         diag_create = PlantDiagnosticCreate(
             organization_id=organization_id,
-            disease_detected=disease,
+            disease_detected=disease_fr,
             treatment_advice=advice or "Aucun conseil disponible pour le moment.",
-            detection_details=detection_details 
+            detection_details=det_details 
         )
 
         new_diagnostic = diagnostic_crud.create_plant_diagnostic(db, diag_create)

@@ -7,100 +7,86 @@ import io
 from PIL import Image
 from fastapi import UploadFile
 from src.core.config import PLANT_MODEL_PATH, VALORISATION_MODEL_PATH
-from src.api.utils.model_loader import get_models
+from src.api.v1.utils.model_loader import get_models
+from src.api.v1.utils.save_diagnostic import save_diagnostic_image
 
 
-SHORT_NAMES_MAP = {
-    "Corn leaf blight": "Corn_Blight",
-    "Corn rust leaf": "Corn_Rust",
-    "Tomato leaf late blight": "Tom_Late_Blight",
-    "Tomato mold leaf": "Tom_Mold",
-    "Tomato leaf yellow virus": "Tom_Yellow_Virus",
-    "Tomato leaf mosaic virus": "Tom_Mosaic",
-    "Tomato leaf bacterial spot": "Tom_Bacterial",
-    "Squash Powdery mildew leaf": "Squash_Powdery",
-    "Corn Gray leaf spot": "Corn_Gray_Spot",
-    "Tomato Early blight leaf": "Tom_Early_Blight",
-    "Tomato Septoria leaf spot": "Tom_Septoria",
-    "Bell_pepper leaf spot": "Pepper_Spot",
-    "Tomato two spotted spider mites leaf": "Tom_Mites",
-    "Nutrient Deficiencies": "Nutrient_Def",
-    "White bugs": "White_Bugs",
-    "Tomato leaf": "Tomato_Health",
-    "Bell_pepper leaf": "Pepper_Health",
-    "Blueberry leaf": "Blueberry_Health"
-}
+TARGETS = [
+    {"en": "Corn leaf blight", "fr": "Helminthosporiose"},
+    {"en": "Corn rust leaf", "fr": "Rouille"},
+    {"en": "Tomato leaf late blight", "fr": "Mildiou"},
+    {"en": "Tomato mold leaf", "fr": "Cladosporiose"},
+    {"en": "Tomato leaf yellow virus", "fr": "Virus"},
+    {"en": "Blueberry leaf", "fr": "Septoriose"},
+    {"en": "Tomato leaf mosaic virus", "fr": "Mosaïque"},
+    {"en": "Tomato leaf bacterial spot", "fr": "Gale bactérienne"},
+    {"en": "Squash Powdery mildew leaf", "fr": "Oïdium"},
+    {"en": "Corn Gray leaf spot", "fr": "Cercosporiose"},
+    {"en": "Tomato Early blight leaf", "fr": "Alternariose"},
+    {"en": "Tomato Septoria leaf spot", "fr": "Septoriose"},
+    {"en": "Tomato leaf", "fr": "Tomate"}, 
+    {"en": "Bell_pepper leaf spot", "fr": "Cercosporiose"},
+    {"en": "Bell_pepper leaf", "fr": "Poivron"},
+    {"en": "Tomato two spotted spider mites leaf", "fr": "Acariens"},
+    {"en": "Nutrient Deficiencies", "fr": "Carence"},
+    {"en": "White bugs", "fr": "Aleurodes"}
+]
+
+# Mapping rapide pour le code : { "English Name": "French Name" }
+TRANSLATION_MAP = {t["en"]: t["fr"] for t in TARGETS}
 
 def run_prediction(image_data: bytes):
     """Exécute la prédiction YOLO pour les plantes directement depuis le fichier en mémoire."""
     models = get_models()
     model = models.get('plant')
     if not model:
-        return "Inconnu", None, {"label": "Service IA indisponible", "confidence": 0, "has_boxes": False}
+        return "Inconnu", None, {"label": "Service IA indisponible"},[]
     
     image = Image.open(io.BytesIO(image_data)).convert("RGB")
     results = model(image, conf=0.25)
     
-    disease = "Sain"
-    # Temporarire pour les conseils (à remplacer par un RAG) 
-    advices_map = {"Tomato Septoria leaf spot": "Utilisez un fongicide à base de cuivre et retirez les feuilles infectées."}
-    advice = advices_map.get(disease, "Surveillez l'évolution de la plante.")
+    if not results or len(results[0].boxes) == 0:
+        return "Sain", {"label": "Sain", "confidence": 1.0, "all_detections": []}, []
+
+    result = results[0]
+    original_names = result.names.copy()
     
-    detections = []
-    image_path = None
+    # 1. Préparer les noms courts (Français) pour le plot()
+    short_names_fr = {id: TRANSLATION_MAP.get(name, name) for id, name in original_names.items()}
+    result.names = short_names_fr
+    im_array = result.plot() 
+    result.names = original_names
 
-    if len(results) > 0 and len(results[0].boxes) > 0:
-        result = results[0]
-        original_names = result.names.copy()
-        short_names = {
-            id: SHORT_NAMES_MAP.get(name, name) 
-            for id, name in original_names.items()
-        }
-        result.names = short_names
-        im_array = result.plot()
+    # --- Extraction des Pathologies Uniques (pour le RAG) ---
+    exclude = ["Tomato leaf", "Bell_pepper leaf", "Blueberry leaf"]
+    detected_ids = set(int(box.cls[0]) for box in result.boxes)
+    pathologies_fr = [
+        TRANSLATION_MAP.get(original_names[i]) 
+        for i in detected_ids 
+        if original_names[i] not in exclude
+    ]
 
-        result.names = original_names
-        # 2. Extraire TOUTES les détections pour le dictionnaire
-        for box in result.boxes:
-            class_id = int(box.cls[0])
-            detections.append({
-                "bbox": [round(x, 1) for x in box.xyxy[0].tolist()],
-                "conf": round(float(box.conf[0]), 2),
-                "class": class_id,
-                "name": original_names[class_id] # Nom complet ici
-            })
+    # --- Préparation des métadonnées ---
+    best_box = result.boxes[0]
+    disease_fr = TRANSLATION_MAP.get(original_names[int(best_box.cls[0])], "Inconnu")
+    
+    # Sauvegarde physique
+    image_path = save_diagnostic_image(im_array)
 
-        # 3. Identifier la maladie principale (la plus probable)
-        best_box = result.boxes[0]
-        disease = original_names[int(best_box.cls[0])]
-        max_confidence = float(best_box.conf[0])
+    detection_details = {
+        "label": disease_fr,
+        "confidence": round(float(best_box.conf[0]), 2),
+        "image_url": image_path,
+        "pathologies": pathologies_fr,
+        "boxes": [
+            {
+                "coords": [round(x, 1) for x in box.xyxy[0].tolist()],
+                "label": TRANSLATION_MAP.get(original_names[int(box.cls[0])])
+            } for box in result.boxes
+        ]
+    }
 
-       
-        # Sauvegarde de l'image (avec les noms courts déjà dessinés)
-        target_dir = os.path.join("uploads", "diagnostics")
-        os.makedirs(target_dir, exist_ok=True)
-        unique_filename = f"{uuid.uuid4().hex}.jpg"
-        image_path = os.path.join(target_dir, unique_filename)
-        
-        
-        cv2.imwrite(image_path, im_array)
-
-        # 5. Préparer les détails finaux
-        detection_details = {
-            "label": disease,
-            "confidence": round(max_confidence, 2),
-            "image_url": image_path,
-            "all_detections": detections  #
-        }
-    else:
-        
-        detection_details = {
-            "label": "Sain",
-            "confidence": 1.0,
-            "all_detections": []
-        }
-
-    return disease, advice, detection_details
+    return disease_fr, detection_details, pathologies_fr
 
 # def run_valorisation_prediction(image_path: str):
 #     """Exécute la prédiction YOLO pour le contrôle qualité (Valorisation)."""
