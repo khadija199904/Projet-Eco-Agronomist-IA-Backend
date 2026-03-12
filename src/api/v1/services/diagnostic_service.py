@@ -10,13 +10,34 @@ from src.core.config import PLANT_MODEL_PATH, VALORISATION_MODEL_PATH
 from src.api.utils.model_loader import get_models
 
 
+SHORT_NAMES_MAP = {
+    "Corn leaf blight": "Corn_Blight",
+    "Corn rust leaf": "Corn_Rust",
+    "Tomato leaf late blight": "Tom_Late_Blight",
+    "Tomato mold leaf": "Tom_Mold",
+    "Tomato leaf yellow virus": "Tom_Yellow_Virus",
+    "Tomato leaf mosaic virus": "Tom_Mosaic",
+    "Tomato leaf bacterial spot": "Tom_Bacterial",
+    "Squash Powdery mildew leaf": "Squash_Powdery",
+    "Corn Gray leaf spot": "Corn_Gray_Spot",
+    "Tomato Early blight leaf": "Tom_Early_Blight",
+    "Tomato Septoria leaf spot": "Tom_Septoria",
+    "Bell_pepper leaf spot": "Pepper_Spot",
+    "Tomato two spotted spider mites leaf": "Tom_Mites",
+    "Nutrient Deficiencies": "Nutrient_Def",
+    "White bugs": "White_Bugs",
+    "Tomato leaf": "Tomato_Health",
+    "Bell_pepper leaf": "Pepper_Health",
+    "Blueberry leaf": "Blueberry_Health"
+}
+
 def run_prediction(image_data: bytes):
     """Exécute la prédiction YOLO pour les plantes directement depuis le fichier en mémoire."""
     models = get_models()
     model = models.get('plant')
     if not model:
         return "Inconnu", None, {"label": "Service IA indisponible", "confidence": 0, "has_boxes": False}
-
+    
     image = Image.open(io.BytesIO(image_data)).convert("RGB")
     results = model(image, conf=0.25)
     
@@ -30,25 +51,32 @@ def run_prediction(image_data: bytes):
 
     if len(results) > 0 and len(results[0].boxes) > 0:
         result = results[0]
-        
+        original_names = result.names.copy()
+        short_names = {
+            id: SHORT_NAMES_MAP.get(name, name) 
+            for id, name in original_names.items()
+        }
+        result.names = short_names
+        im_array = result.plot()
+
+        result.names = original_names
         # 2. Extraire TOUTES les détections pour le dictionnaire
         for box in result.boxes:
+            class_id = int(box.cls[0])
             detections.append({
                 "bbox": [round(x, 1) for x in box.xyxy[0].tolist()],
                 "conf": round(float(box.conf[0]), 2),
-                "class": int(box.cls[0]),
-                "name": result.names[int(box.cls[0])]
+                "class": class_id,
+                "name": original_names[class_id] # Nom complet ici
             })
 
         # 3. Identifier la maladie principale (la plus probable)
-       
         best_box = result.boxes[0]
-        disease = result.names[int(best_box.cls[0])]
+        disease = original_names[int(best_box.cls[0])]
         max_confidence = float(best_box.conf[0])
 
-        # 4. Dessiner les boîtes et sauvegarder l'image
-        im_array = result.plot() 
-        
+       
+        # Sauvegarde de l'image (avec les noms courts déjà dessinés)
         target_dir = os.path.join("uploads", "diagnostics")
         os.makedirs(target_dir, exist_ok=True)
         unique_filename = f"{uuid.uuid4().hex}.jpg"
@@ -61,7 +89,6 @@ def run_prediction(image_data: bytes):
         detection_details = {
             "label": disease,
             "confidence": round(max_confidence, 2),
-            "has_boxes": True,
             "image_url": image_path,
             "all_detections": detections  #
         }
@@ -70,7 +97,6 @@ def run_prediction(image_data: bytes):
         detection_details = {
             "label": "Sain",
             "confidence": 1.0,
-            "has_boxes": False,
             "all_detections": []
         }
 

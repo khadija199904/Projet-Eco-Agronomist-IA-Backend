@@ -1,7 +1,7 @@
 from pydantic import BaseModel, ConfigDict
 from typing import Optional, List, Dict, Any
 from datetime import datetime
-from .ordonnance_schema import TreatmentCreate, TreatmentRAGResponse
+from .ordonnance_schema import TreatmentRAGCreate, TreatmentRAGResponse
 
 
 class DetectionDetail(BaseModel):
@@ -17,19 +17,17 @@ class PlantDiagnosticBase(BaseModel):
     organization_id: int
     image_url: Optional[str] = None
     disease_detected: Optional[str] = None
-    treatment_advice: Optional[str] = None
     detection_details: Optional[Dict[str, Any]] = None 
 
 class PlantDiagnosticCreate(PlantDiagnosticBase):
-    treatments: Optional[List[TreatmentCreate]] = []
+    treatments: Optional[List[TreatmentRAGCreate]] = []
 
 
 
 class PlantDiagnosticResponse(PlantDiagnosticBase):
     id: int
     created_at: datetime
-    treatments: List[TreatmentResponse] = []
-    treatment_rag: Optional[TreatmentRAGResponse] = None
+    treatment_advice: Optional[TreatmentRAGResponse] = None
     
     model_config = ConfigDict(from_attributes=True)
 
