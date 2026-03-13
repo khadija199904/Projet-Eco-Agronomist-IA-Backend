@@ -32,6 +32,7 @@ app.include_router(routers.organization,  prefix=f"{PREFIX}/organization", tags=
 app.include_router(routers.diagnostic,    prefix=f"{PREFIX}/diagnostic",   tags=["IA Diagnostic"])
 app.include_router(routers.production,    prefix=f"{PREFIX}/production",   tags=["Production & Traçabilité Agricole"])
 app.include_router(routers.valorisation,  prefix=f"{PREFIX}/valorisation", tags=["Valorisation - Traitement Station"])
+app.include_router(routers.advisor,       prefix=f"{PREFIX}/advisor",      tags=["RAG Advisor"])
 
 
 
