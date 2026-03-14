@@ -13,7 +13,7 @@ from .tracking import setup_mlflow
 load_dotenv()
 
 # --- Dataset Setup  ---
-def setup_dataset(dataset_name="khadijaelabbioui/agrivision-unified-plant-disease-18-classes"):
+def setup_dataset(dataset_name):
     """Downloads the Kaggle dataset and prepares its YAML configuration."""
     
     dataset_root = download_kaggle_dataset(dataset_name)
@@ -22,7 +22,7 @@ def setup_dataset(dataset_name="khadijaelabbioui/agrivision-unified-plant-diseas
     
     if not os.path.exists(original_yaml_path):
         print(f"Error: dataset.yaml not found at {original_yaml_path}")
-        yaml_files = glob.glob(os.path.join(dataset_root, "**", "dataset.yaml"), recursive=True)
+        yaml_files = glob.glob(os.path.join(dataset_root, "**", "data.yaml"), recursive=True)
         if yaml_files:
             original_yaml_path = yaml_files[0]
             print(f"Found dataset.yaml in subdirectory: {original_yaml_path}")
@@ -57,24 +57,40 @@ def train_eco_agronomist(pole="PRODUCTION", algo="YOLO", epochs=50):
     algos: "YOLO", "RTDETR"
     """
     setup_mlflow()
-    data_yaml_path = setup_dataset() 
+    dataset_1 = "khadijaelabbioui/agrivision-plant-disease"
+    dataset_2 = "khadijaelabbioui/fruit-disease-detection"
+    dataset_3 = "khadijaelabbioui/fresh-rotten-1"
+    
 
     print(f" Initialisation de l'entraînement : Pôle {pole} avec {algo}...")
     
     if pole == "PRODUCTION":
         project_name = "Prod_Maladies"
-        if algo == "YOLO":
-            model_path = 'yolo26s.pt' 
-            model = YOLO(model_path)
-        elif algo == "RTDETR":
-            model_path = 'rtdetr-l.pt' 
-            model = RTDETR(model_path)
+        data_yaml_path = setup_dataset(dataset_1) 
+        
+        model_path = 'yolo26s.pt' if algo == "YOLO" else 'rtdetr-l.pt'
         
     elif pole == "VALORISATION":
         project_name = "Val_Anomalies"
-        if algo == "YOLO" :
-           model_path = 'yolov10n.pt' 
-           model = YOLO(model_path)
+        data_yaml_path = setup_dataset(dataset_2) 
+        
+        model_path = 'yolo11n.pt' 
+        if algo == "RTDETR":
+            print(" RTDETR non configuré pour Valorisation. Utilisation de YOLO Nano par défaut.")
+            algo = "YOLO"
+    elif pole == "CONSOMMATION":
+        project_name = "Conso_Fraicheur"
+        data_yaml_path = setup_dataset(dataset_3)
+        model_path = 'yolo26n.pt' 
+        algo = "YOLO"
+    else:
+        raise ValueError("Pôle non reconnu")
+
+    # 2. Chargement effectif du modèle
+    if algo == "RTDETR":
+        model = RTDETR(model_path)
+    else:
+        model = YOLO(model_path)
         
 
     # --- Lancement de l'entraînement ---
@@ -131,11 +147,11 @@ if __name__ == "__main__":
        print("CUDA toujours indisponible. Vérifiez l'installation.")
     
     # Test : Pôle Production avec YOLO 
-    train_eco_agronomist(
-        pole="PRODUCTION", 
-        algo="YOLO", 
-        epochs=100
-    )
+    # train_eco_agronomist(
+    #     pole="PRODUCTION", 
+    #     algo="YOLO", 
+    #     epochs=100
+    # )
 
     # You can uncomment and test other configurations if needed
     # Test 1 : Pôle Production avec RT-DETR (Le plus moderne)
@@ -146,8 +162,8 @@ if __name__ == "__main__":
     # )
 
     # Test 2 : Pôle Valorisation avec YOLO Nano (Le plus rapide pour PWA)
-    # train_eco_agronomist(
-    #     pole="VALORISATION", 
-    #     algo="YOLO", 
-    #     epochs=50
-    # )
+    train_eco_agronomist(
+        pole="VALORISATION", 
+        algo="YOLO", 
+        epochs=100
+    )
