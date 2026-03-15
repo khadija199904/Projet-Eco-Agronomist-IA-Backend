@@ -19,18 +19,15 @@ def standardize_roboflow():
     if os.path.exists(DST_DIR):
         shutil.rmtree(DST_DIR)
     
-    # Création de la structure : images/(train|val) et labels/(train|val)
     for folder in ['images', 'labels']:
         for split in ['train', 'val']:
             os.makedirs(os.path.join(DST_DIR, folder, split), exist_ok=True)
     
-    # 2. Copie du fichier data.yaml (indispensable pour le filtrage Spark)
     src_yaml = os.path.join(SRC_DIR, 'data.yaml')
     if os.path.exists(src_yaml):
         shutil.copy2(src_yaml, os.path.join(DST_DIR, 'data.yaml'))
         print("Fichier data.yaml copié avec succès.")
     
-    # Initialisation des compteurs pour éviter d'écraser les fichiers lors de la fusion
     counters = {'train': 0, 'val': 0}
 
     for src_split, dst_split in mapping.items():
@@ -47,11 +44,9 @@ def standardize_roboflow():
         print(f"Fusion de Roboflow '{src_split}' vers Silver '{dst_split}' ({len(files)} fichiers)...")
 
         for old_name in sorted(files):
-            # Utilisation du compteur global pour ce split de destination
             idx = counters[dst_split]
             extension = os.path.splitext(old_name)[1]
             
-            # Nouveau nom unique : robo_val_00001, robo_val_00002, etc.
             new_base_name = f"{dst_split}_{idx:05d}"
             new_img_name = new_base_name + extension
             new_lbl_name = new_base_name + ".txt"

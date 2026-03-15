@@ -2,7 +2,7 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from datetime import datetime
-from tasks.standardize_roboflow import standardize_roboflow
+from tasks.prod_data_roboflow import standardize_roboflow
 
 with DAG('roboflow_standardization_pipeline', 
          start_date=datetime(2026, 2, 17), 
