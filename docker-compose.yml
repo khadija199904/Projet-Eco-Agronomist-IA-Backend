@@ -101,24 +101,26 @@ services:
     command: scheduler
     networks:
       - eco_network
-  # # --- MICROSERVICE 2 : API & INFERENCE (FastAPI) ---
-  # api-service:
-  #   build:
-  #     context: .
-  #     dockerfile: services/api-inference-service/Dockerfile.api
-  #   container_name: fastapi_inference_service
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #   env_file:
-  #     - .env
-  #   volumes:
-  #     - ./services/api-inference-service/src:/app/src
-  #     - ./data/gold:/app/data/gold         # Accès aux data Gold pour rapports
-  #   ports:
-  #     - "8000:8000"
-  #   networks:
-  #     - eco_network
+  # --- MICROSERVICE 2 : API & INFERENCE (FastAPI) ---
+  api-service:
+    build:
+      context: .
+      dockerfile: src/Dockerfile.api
+    container_name: backend_api
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    env_file:
+      - .env
+    volumes:
+      - ./src:/app/src
+      - ./artifacts:/app/artifacts
+      - ./uploads:/app/uploads
+      - ./data:/app/data
+    ports:
+      - "8000:8000"
+    networks:
+      - eco_network
 
 networks:
   eco_network:

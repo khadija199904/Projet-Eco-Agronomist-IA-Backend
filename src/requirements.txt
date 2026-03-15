@@ -1,0 +1,27 @@
+torch
+torchvision
+ultralytics
+sqlalchemy
+pydantic
+fastapi
+uvicorn
+python-dotenv
+psycopg2-binary
+passlib[argon2]
+python-jose
+python-multipart
+
+
+# RAG 
+
+langchain
+langchain-community 
+langchain-core
+langchain-classic 
+pypdf
+langchain-text-splitters
+langchain-huggingface 
+langchain-chroma
+chromadb
+sentence-transformers
+langchain-groq

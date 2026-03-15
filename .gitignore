@@ -4,6 +4,10 @@ data/
 __pycache__/
 docs/
 logs/
-
-
+.python-version
+artifacts/
+data_val_scrap.py
+artifacts/
+data_val_scrap.py
+uploads/
 

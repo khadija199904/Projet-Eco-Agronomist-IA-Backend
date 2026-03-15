@@ -1,20 +1,24 @@
 FROM python:3.12-slim
 
-# Installer les dépendances système pour OpenCV (souvent requis par YOLO/ML)
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
 RUN apt-get update && apt-get install -y \
-    libgl1-mesa-glx \
+    libgl1 \
     libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+ENV PYTHONPATH=/app
 
-# Installer les dépendances Python
-# requirements.txt contiendra : fastapi, uvicorn, ultralytics, mlflow, etc.
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN uv pip install --no-cache --system \
+    --extra-index-url https://download.pytorch.org/whl/cpu \
+    torch torchvision ultralytics
 
-# Copier le code source
+COPY src/requirements.txt .
+RUN uv pip install --no-cache --system -r requirements.txt
+
 COPY src/ /app/src/
-COPY main.py /app/
+COPY artifacts/ /app/artifacts/
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+CMD ["sh", "-c", "sleep 5 && uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload"] 
