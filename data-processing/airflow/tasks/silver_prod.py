@@ -5,7 +5,7 @@ from session_spark import get_spark_session
 from pyspark.sql.functions import col, udf
 from pyspark.sql.types import StringType
 
-# Initialisation de Spark via votre utilitaire session_spark
+# Initialisation de Spark 
 spark = get_spark_session("Silver_Layer_Final_Fusion")
 
 # --- 1. CONFIGURATION DU MAPPING DE RÉINDEXATION (0 à 17) ---
@@ -39,7 +39,7 @@ FINAL_NAMES = {
 }
 
 BRONZE_DIR = "/opt/airflow/data/bronze"
-SILVER_DIR = "/opt/airflow/data/silver"
+SILVER_DIR = "/opt/airflow/data/silver/detection_maladies_plantes"
 
 
 # --- 2. LOGIQUE DE FILTRAGE ET RÉINDEXATION (UDF) ---
@@ -62,15 +62,11 @@ def copy_files_to_silver(partition):
     
     for row in partition:
             source, split, filename, content = row
-            # On normalise le split pour la destination (au cas où roboflow utiliserait 'valid')
             target_split = "val" if split in ["val", "valid"] else "train"
             prefix = "k_" if source == "kaggle" else "r_"
             img_name = filename.replace(".txt", ".jpg")
-            
-            # Les deux sources ont maintenant la même structure : dataset/images/split/img
             folder_src = "plant-doc" if source == "kaggle" else "roboflow"
             src_img = os.path.join(BRONZE_DIR, folder_src, "images", split, img_name)
-            
             dst_img = os.path.join(SILVER_DIR, target_split, "images", f"{prefix}{img_name}")
             dst_lbl = os.path.join(SILVER_DIR, target_split, "labels", f"{prefix}{filename}")
             
@@ -86,12 +82,11 @@ def process_silver():
         for d in ['images', 'labels']:
             os.makedirs(f"{SILVER_DIR}/{s}/{d}", exist_ok=True)
 
-    # Lecture adaptée aux deux structures
-    # Kaggle: labels/train/*.txt
+    # Kaggle
     kag_rdd = spark.sparkContext.wholeTextFiles(f"{BRONZE_DIR}/plant-doc/labels/*/*.txt") \
         .map(lambda x: ("kaggle", x[0].split('/')[-2], os.path.basename(x[0]), x[1]))
     
-    # Roboflow: roboflow/train/labels/*.txt
+    # Roboflow
     robo_rdd = spark.sparkContext.wholeTextFiles(f"{BRONZE_DIR}/roboflow/labels/*/*.txt") \
         .map(lambda x: ("roboflow", x[0].split('/')[-2], os.path.basename(x[0]), x[1]))
 
@@ -102,7 +97,7 @@ def process_silver():
                            .filter(col("content").isNotNull()) \
                            .select("source", "split", "filename", "content")
 
-    # Important: On déclenche l'action
+    
     silver_df.rdd.foreachPartition(copy_files_to_silver)
 
     #  YAML 
@@ -114,7 +109,7 @@ def process_silver():
         'names': FINAL_NAMES
     }
     
-    with open(os.path.join(SILVER_DIR, 'dataset.yaml'), 'w') as f:
+    with open(os.path.join(SILVER_DIR, 'data.yaml'), 'w') as f:
         yaml.dump(yaml_content, f, default_flow_style=False)
 
     print(f"Couche Silver terminée. Total classes : 18. Fichiers fusionnés dans {SILVER_DIR}")
