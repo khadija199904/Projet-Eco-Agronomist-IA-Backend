@@ -58,7 +58,7 @@ def train_eco_agronomist(pole="PRODUCTION", algo="YOLO", epochs=50):
     """
     setup_mlflow()
     dataset_1 = "khadijaelabbioui/agrivision-plant-disease"
-    dataset_2 = "khadijaelabbioui/fruit-disease-detection"
+    dataset_2 = "khadijaelabbioui/fruits-vegetables-disease-detection"
     dataset_3 = "khadijaelabbioui/fresh-rotten-1"
     
 
@@ -96,7 +96,7 @@ def train_eco_agronomist(pole="PRODUCTION", algo="YOLO", epochs=50):
     # --- Lancement de l'entraînement ---
     if algo == "RTDETR":
         optimizer = 'AdamW'
-        lr0 = 0.0005  # Lowered from 0.01 to prevent NaN
+        lr0 = 0.0005  
         warmup_epochs = 3 
         weight_decay = 0.0001
         imgsz = 480
@@ -163,7 +163,7 @@ if __name__ == "__main__":
 
     # Test 2 : Pôle Valorisation avec YOLO Nano (Le plus rapide pour PWA)
     train_eco_agronomist(
-        pole="VALORISATION", 
+        pole="CONSOMMATION", 
         algo="YOLO", 
         epochs=100
     )
