@@ -18,12 +18,12 @@ app = FastAPI(
 Base.metadata.create_all(bind=engine)
 
 
-# setup_cors(app)
+setup_cors(app)
 
-# app.add_middleware(
-#     TrustedHostMiddleware,
-#     allowed_hosts=settings.ALLOWED_HOSTS,
-# )
+app.add_middleware(
+    TrustedHostMiddleware,
+    allowed_hosts=settings.ALLOWED_HOSTS,
+)
 
 PREFIX = settings.PROJECT_V1_STR
 
