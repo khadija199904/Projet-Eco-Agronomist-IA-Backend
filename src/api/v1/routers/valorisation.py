@@ -31,14 +31,14 @@ async def check_quality(
     if user.role not in [UserRole.QUALITE, UserRole.ADMIN]:
         raise HTTPException(status_code=403, detail="Accès réservé au contrôle qualité.")
 
-    # 1. Sauvegarde et Inférence
-    image_path = await diagnostic_service.save_upload_file(file, sub_dir="valorisation")
-    defects, score, taux, decision, detection_details = diagnostic_service.run_valorisation_prediction(image_path)
+    # 1. Lecture et Inférence
+    image_bytes = await file.read()
+    defects, score, taux, decision, detection_details, annotated_path = diagnostic_service.run_valorisation_prediction(image_bytes)
 
     # 2. Enregistrement automatique du scan dans l'historique diagnostic
     diag_create = ProductDiagnosticCreate(
         lot_recolte_id=lot_id,
-        image_url=image_path,
+        image_url=annotated_path,
         visual_defects=defects,
         healthy_score=score,
         taux_defauts_visuels=taux,
@@ -52,7 +52,7 @@ async def check_quality(
         taux_conformite=round(score * 100, 2),
         defauts_detectes=defects,
         decision_suggeree=decision,
-        image_url=image_path
+        image_url=annotated_path
     )
 
 @router.get("/report/{lot_id}", response_model=LotQualityReport)
