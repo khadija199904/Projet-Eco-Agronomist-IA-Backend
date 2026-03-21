@@ -8,7 +8,7 @@ from src.api.v1.schemas.diagnostic_schema import (
     ProductDiagnosticCreate, ProductDiagnosticResponse,
     DiagnosticListResponse, DiagnosticHistoryItem
 )
-from src.api.v1.crud import diagnostic_crud
+from src.api.v1.crud import diagnostic_crud , lot_crud
 from src.api.v1.services import diagnostic_service
 from src.database.models.users import User
 from src.database.models.enums import UserRole, DiagnosticType
@@ -59,9 +59,13 @@ async def valorize_product(
     # Sécurité : Rôle Qualité ou Admin
     if user.role not in [UserRole.QUALITE, UserRole.ADMIN]:
         raise HTTPException(status_code=403, detail="Réservé aux contrôleurs qualité.")
+    
+    org_id = user.organization_id
+    if not org_id:
+        raise HTTPException(status_code=400, detail="L'utilisateur n'est rattaché à aucune organisation.")
 
-    # Vérification : Le lot existe-t-il ?
-    lot = lot_crud.get_lot(db, lot_recolte_id)
+    
+    lot = lot_crud.get_lot_by_id(db, lot_recolte_id)
     if not lot:
         raise HTTPException(status_code=404, detail="Lot de récolte introuvable.")
 
@@ -71,6 +75,7 @@ async def valorize_product(
     
     diag_create = ProductDiagnosticCreate(
         lot_recolte_id=lot_recolte_id,
+        organization_id=org_id,
         image_url=annotated_path,
         visual_defects=defects,
         healthy_score=score,
