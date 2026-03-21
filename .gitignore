@@ -13,5 +13,5 @@ artifacts/models_saved/
 runs/
 mlruns/
 mlflow.db
-
+.github/
 
