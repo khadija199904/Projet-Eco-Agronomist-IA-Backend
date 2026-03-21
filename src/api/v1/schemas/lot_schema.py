@@ -13,6 +13,14 @@ class LotRecolteBase(BaseModel):
 class LotRecolteCreate(LotRecolteBase):
     pass 
 
+class LotRecolteUpdate(BaseModel):
+    num_BL: Optional[str] = None
+    produit_nom: Optional[str] = None
+    poids_brut: Optional[float] = None
+    poids_net: Optional[float] = None
+    nombre_unit_transport: Optional[int] = None
+    ferme_id: Optional[int] = None
+
 class LotRecolteResponse(LotRecolteBase):
     id: int
     code_qr_initial: str

@@ -4,14 +4,14 @@ from typing import List
 
 from src.api.v1.dependencies.db import get_db
 from src.api.v1.dependencies.user import get_current_user
-from src.api.v1.schemas.lot_schema import LotRecolteCreate, LotRecolteResponse
+from src.api.v1.schemas.lot_schema import LotRecolteCreate, LotRecolteResponse, LotRecolteUpdate
 from src.api.v1.crud import lot_crud
 from src.database.models.users import User
 from src.database.models.enums import UserRole
 
 router = APIRouter()
 
-@router.post("/", response_model=LotRecolteResponse)
+@router.post("/lot_recolte", response_model=LotRecolteResponse)
 def creer_lot(
     lot_data: LotRecolteCreate,
     db: Session = Depends(get_db),
@@ -36,3 +36,44 @@ def lister_mes_lots(
         raise HTTPException(status_code=400, detail="Vous n'êtes assigné à aucune ferme.")
         
     return lot_crud.get_lots_by_ferme(db=db, ferme_id=user.organization_id)
+
+@router.put("/lot_recolte/{lot_id}", response_model=LotRecolteResponse)
+def modifier_lot(
+    lot_id: int,
+    lot_update: LotRecolteUpdate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    if user.role != UserRole.AGRICULTEUR:
+        raise HTTPException(status_code=403, detail="Réservé aux agriculteurs.")
+        
+    db_lot = lot_crud.get_lot_by_id(db, lot_id)
+    if not db_lot:
+        raise HTTPException(status_code=404, detail="Lot introuvable.")
+        
+    if db_lot.ferme_id != user.organization_id:
+        raise HTTPException(status_code=403, detail="Accès refusé.")
+        
+    return lot_crud.update_lot(db, lot_id, lot_update)
+
+@router.delete("/lot_recolte/{lot_id}")
+def supprimer_lot(
+    lot_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    if user.role != UserRole.AGRICULTEUR:
+        raise HTTPException(status_code=403, detail="Réservé aux agriculteurs.")
+        
+    db_lot = lot_crud.get_lot_by_id(db, lot_id)
+    if not db_lot:
+        raise HTTPException(status_code=404, detail="Lot introuvable.")
+        
+    if db_lot.ferme_id != user.organization_id:
+        raise HTTPException(status_code=403, detail="Accès refusé.")
+        
+    success = lot_crud.delete_lot(db, lot_id)
+    if not success:
+        raise HTTPException(status_code=500, detail="Erreur lors de la suppression.")
+        
+    return {"message": "Lot supprimé avec succès."}
