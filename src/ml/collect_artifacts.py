@@ -65,7 +65,8 @@ def save_and_export_ml_artifacts(
 if __name__ == "__main__":
     # Plus besoin de deviner le chemin complet, on donne juste le nom du dossier final
     save_and_export_ml_artifacts(
-        run_name="Prod_Maladies_YOLO", 
-        artifact_name="agrivision_maladies_s",
+        run_name="Conso_Fraicheur_YOLO", 
+        artifact_name="agrivision_sonsumer_s_",
         model_type="YOLO26"
     )
+    
