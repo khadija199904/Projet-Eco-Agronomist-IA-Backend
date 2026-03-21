@@ -117,10 +117,51 @@ services:
       - ./artifacts:/app/artifacts
       - ./uploads:/app/uploads
       - ./data:/app/data
+      - ./.env:/app/.env
+
     ports:
       - "8000:8000"
     networks:
       - eco_network
+
+  # --- MICROSERVICE 3 : MLFLOW (Mlobs / Tracking) ---
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:latest
+    container_name: mlflow_server
+    ports:
+      - "5000:5000"
+    environment:
+      - GIT_PYTHON_REFRESH=quiet
+      - MLFLOW_HTTP_WHITELISTED_HOSTS=localhost,127.0.0.1,mlflow,mlflow:5000,backend_api
+      
+    volumes:
+      - ./mlruns:/app/mlruns
+    command: >
+      mlflow server 
+      --host 0.0.0.0 
+      --port 5000 
+      --backend-store-uri sqlite:///mlflow.db 
+      --default-artifact-root /app/mlruns
+      --allowed-hosts "*"
+    networks:
+      - eco_network
+
+  # --- FRONTEND : Next.js App ---
+  frontend:
+    build:
+      context: ../Projet-Eco-Agronomist-IA-Frontend/app-ergonomie
+      dockerfile: Dockerfile
+    container_name: frontend_app
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+    depends_on:
+      - api-service
+    networks:
+      - eco_network
+
 
 networks:
   eco_network:
