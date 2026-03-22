@@ -27,11 +27,14 @@ def create_plant_diagnostic(db: Session, diagnostic: PlantDiagnosticCreate):
         
     return nouveau_diag
 
-def get_diagnostics_by_organization(db: Session, org_id: int):
-    return db.query(UniversalDiagnostic).filter(
-        UniversalDiagnostic.organization_id == org_id,
-        UniversalDiagnostic.diag_type == DiagnosticType.PLANT
-    ).all()
+def get_diagnostics_by_organization(db: Session, org_id: int, diag_type: DiagnosticType = None):
+    query = db.query(UniversalDiagnostic).filter(
+        UniversalDiagnostic.organization_id == org_id
+    )
+    if diag_type:
+        query = query.filter(UniversalDiagnostic.diag_type == diag_type)
+    
+    return query.order_by(UniversalDiagnostic.created_at.desc()).all()
 
 def get_plant_diagnostic_by_id(db: Session, diagnostic_id: int):
     diag = db.get(UniversalDiagnostic, diagnostic_id)

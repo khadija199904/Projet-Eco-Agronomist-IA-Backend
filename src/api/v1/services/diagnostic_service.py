@@ -115,7 +115,7 @@ def run_valorisation_prediction(image_data: bytes):
     model = models.get('valorisation')
     print(model)
     if not model:
-        return {}, 0.5, 0.0, "MECANIQUE", {}, None
+        return {}, 0.0, 0.0, "ERREUR", {"label": "Service IA indisponible"}, None
 
     # Chargement de l'image
     image = Image.open(io.BytesIO(image_data)).convert("RGB")

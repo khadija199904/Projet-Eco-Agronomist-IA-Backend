@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 from src.api.v1.dependencies.db import get_db
 from src.api.v1.dependencies.user import get_current_user
@@ -36,6 +36,21 @@ def lister_mes_lots(
         raise HTTPException(status_code=400, detail="Vous n'êtes assigné à aucune ferme.")
         
     return lot_crud.get_lots_by_ferme(db=db, ferme_id=user.organization_id)
+
+@router.get("/lots", response_model=List[LotRecolteResponse])
+def lister_tous_les_lots(
+    ferme_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    """
+    Lister tous les lots (réservé aux STATIONS et ADMINS).
+    Permet de filtrer par ferme pour la réception.
+    """
+    if user.role not in [UserRole.QUALITE, UserRole.ADMIN]:
+        raise HTTPException(status_code=403, detail="Accès non autorisé.")
+    
+    return lot_crud.get_lots(db, ferme_id=ferme_id)
 
 @router.put("/lot_recolte/{lot_id}", response_model=LotRecolteResponse)
 def modifier_lot(

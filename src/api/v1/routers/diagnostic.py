@@ -100,6 +100,9 @@ def get_history(
 
     query = db.query(UniversalDiagnostic)
     
+    if user.role != UserRole.CONSOMMATEUR and user.organization_id:
+        query = query.filter(UniversalDiagnostic.organization_id == user.organization_id)
+    
     # Filtrage par pole / type
     if diag_type == "plante":
         query = query.filter(UniversalDiagnostic.diag_type == DiagnosticType.PLANT)
