@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from src.database.models.production import LotRecolte
+from src.database.models.production_table import LotRecolte
 from src.api.v1.schemas.lot_schema import LotRecolteCreate
 import uuid
 
@@ -8,7 +8,7 @@ def create_lot(db: Session, lot: LotRecolteCreate, agriculteur_id: int):
     qr_code = f"QR-LOT-{uuid.uuid4().hex[:8].upper()}"
     
     nouveau_lot = LotRecolte(
-        **lot.model_dump(),     # Assigne auto num_BL, produit_nom, poids... 
+        **lot.model_dump(),     
         code_qr_initial=qr_code,
         agriculteur_id=agriculteur_id
     )

@@ -10,3 +10,8 @@ class UserRole(str, enum.Enum):
 class OrgType(str, enum.Enum):
     FERME = "ferme"
     STATION = "station_conditionnement"
+
+class DiagnosticType(str, enum.Enum):
+    PLANT = "plante"
+    PRODUCT = "produit"
+    CONSUMER = "consommation"

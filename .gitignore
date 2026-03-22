@@ -10,4 +10,4 @@ data_val_scrap.py
 artifacts/
 data_val_scrap.py
 .github/workflows/ci-cd.yml
-
+uploads/

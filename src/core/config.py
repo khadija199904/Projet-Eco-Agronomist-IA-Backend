@@ -8,12 +8,16 @@ import urllib.parse
 load_dotenv()
 
 
-PDF_PATH = os.getenv("DATA_PATH")
+ONSSA_PDF_PATH = os.getenv("ONSSA_PDF_PATH")
+RAP_PDF_PATH = os.getenv("RAP_PDF_PATH")
+INRA_PDF_PATH = os.getenv("INRA_PDF_PATH")
 
 EMBEDDING_MODEL_NAME= os.getenv("EMBEDDING_MODEL_NAME")
 VECTOR_DB_DIR = os.getenv("VECTOR_DB_DIR")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_KEY")
 class Settings:
     PROJECT_NAME: str = "Eco Agronomist IA"
     PROJECT_V1_STR: str = "/api/v1"

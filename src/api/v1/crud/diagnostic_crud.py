@@ -1,46 +1,62 @@
 from sqlalchemy.orm import Session
-from src.database.models.diagnostics import PlantDiagnostic, Treatment, DiagnosticProduct
-from src.api.v1.schemas.diagnostic_schema import PlantDiagnosticCreate, TreatmentCreate, DiagnosticProductCreate
+from src.database.models.diagnostics_table import UniversalDiagnostic
+from src.database.models.ordonnacesIA import TreatmentRAG
+from src.database.models.enums import DiagnosticType
+from src.api.v1.schemas.diagnostic_schema import PlantDiagnosticCreate, TreatmentRAGCreate, ProductDiagnosticCreate
 
 def create_plant_diagnostic(db: Session, diagnostic: PlantDiagnosticCreate):
-    # "treatments" n'est pas une colonne de la db, c'est une relation
     diagnostic_data = diagnostic.model_dump(exclude={"treatments"})
     
-    #  Création du diagnostic
-    nouveau_diag = PlantDiagnostic(**diagnostic_data)
+    nouveau_diag = UniversalDiagnostic(
+        diag_type=DiagnosticType.PLANT,
+        **diagnostic_data
+    )
     db.add(nouveau_diag)
     db.commit()
     db.refresh(nouveau_diag)
     
-    # 3. S'il y a des traitements spécifiés en même temps, on les crée aussi
     if diagnostic.treatments:
         for t in diagnostic.treatments:
-            nouveau_traitement = Treatment(
+            nouveau_traitement = TreatmentRAG(
                 diagnostic_id=nouveau_diag.id,
                 **t.model_dump()
             )
             db.add(nouveau_traitement)
         db.commit()
-        db.refresh(nouveau_diag) # Pour que la relation soit mise à jour dans l'objet Python
+        db.refresh(nouveau_diag) 
         
     return nouveau_diag
 
-def get_diagnostics_by_lot(db: Session, lot_id: int):
-    # On récupère tous les diagnostics d'un lot spécifique
-    return db.query(PlantDiagnostic).filter(PlantDiagnostic.lot_recolte_id == lot_id).all()
+def get_diagnostics_by_organization(db: Session, org_id: int):
+    return db.query(UniversalDiagnostic).filter(
+        UniversalDiagnostic.organization_id == org_id,
+        UniversalDiagnostic.diag_type == DiagnosticType.PLANT
+    ).all()
 
 def get_plant_diagnostic_by_id(db: Session, diagnostic_id: int):
-    return db.get(PlantDiagnostic, diagnostic_id)
+    diag = db.get(UniversalDiagnostic, diagnostic_id)
+    if diag and diag.diag_type != DiagnosticType.PLANT:
+        return None
+    return diag
 
-def create_diagnostic_product(db: Session, diagnostic: DiagnosticProductCreate):
-    nouveau_diag = DiagnosticProduct(**diagnostic.model_dump())
+def create_diagnostic_product(db: Session, diagnostic: ProductDiagnosticCreate):
+    nouveau_diag = UniversalDiagnostic(
+        diag_type=DiagnosticType.PRODUCT,
+        **diagnostic.model_dump()
+    )
     db.add(nouveau_diag)
     db.commit()
     db.refresh(nouveau_diag)
     return nouveau_diag
 
 def get_diagnostic_products_by_lot(db: Session, lot_id: int):
-    return db.query(DiagnosticProduct).filter(DiagnosticProduct.lot_recolte_id == lot_id).all()
+    return db.query(UniversalDiagnostic).filter(
+        UniversalDiagnostic.lot_recolte_id == lot_id,
+        UniversalDiagnostic.diag_type == DiagnosticType.PRODUCT
+    ).all()
 
 def get_product_diagnostic_by_id(db: Session, diagnostic_id: int):
-    return db.get(DiagnosticProduct, diagnostic_id)
+    diag = db.get(UniversalDiagnostic, diagnostic_id)
+    if diag and diag.diag_type != DiagnosticType.PRODUCT:
+        return None
+    return diag
