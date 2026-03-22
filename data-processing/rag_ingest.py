@@ -10,7 +10,7 @@ PDF_PATHS = [ONSSA_PDF_PATH, RAP_PDF_PATH, INRA_PDF_PATH]
 
 # 1. Initialisation des clients
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-model = SentenceTransformer('all-MiniLM-L6-v2') 
+model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2') 
 
 def run_ingestion():
     # 2. Configuration du splitter
