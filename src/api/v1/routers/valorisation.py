@@ -12,7 +12,8 @@ from src.api.v1.schemas.diagnostic_schema import (
 )
 from src.api.v1.schemas.valorisation_schema import (
     TraitementStationCreate, TraitementStationResponse, 
-    QualiteCheckResult, LotQualityReport, TraitementStationUpdate
+    QualiteCheckResult, LotQualityReport, TraitementStationUpdate,
+    ReceptionStationCreate, ReceptionStationResponse
 )
 from src.api.v1.crud import valorisation_crud, diagnostic_crud
 from src.api.v1.services import diagnostic_service
@@ -100,5 +101,36 @@ def finalize_lot(
     """Finalise la décision de traitement pour un lot."""
     if user.role not in [UserRole.QUALITE, UserRole.ADMIN]:
         raise HTTPException(status_code=403, detail="Accès réservé au contrôle qualité.")
-    
     return valorisation_crud.update_traitement_station(db, lot_id, update_data.model_dump())
+
+
+# --- RECEPTION ENDPOINTS ---
+@router.post("/reception", response_model=ReceptionStationResponse)
+def record_reception(
+    reception: ReceptionStationCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    """Enregistre l'arrivée physique d'un lot à la station."""
+    if user.role not in [UserRole.QUALITE, UserRole.ADMIN]:
+        raise HTTPException(status_code=403, detail="Accès réservé au personnel de la station.")
+    
+    return valorisation_crud.create_reception(db=db, reception=reception, receptionnaire_id=user.id)
+
+@router.get("/receptions", response_model=List[ReceptionStationResponse])
+def get_all_receptions(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    """Liste tous les lots réceptionnés à la station — utilisé par le frontend pour filtrer."""
+    return valorisation_crud.get_all_receptions(db)
+
+@router.get("/reception/{lot_id}", response_model=Optional[ReceptionStationResponse])
+def get_reception(
+    lot_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    """Récupère les détails de réception d'un lot. Retourne null si pas encore réceptionné."""
+    res = valorisation_crud.get_reception_by_lot(db, lot_id)
+    return res  # Retourne None (null JSON) si non trouvé, pas de 404

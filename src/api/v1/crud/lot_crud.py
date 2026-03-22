@@ -22,6 +22,12 @@ def get_lots_by_ferme(db: Session, ferme_id: int):
     # Retourne tous les lots liés à l'organisation de l'agriculteur
     return db.query(LotRecolte).filter(LotRecolte.ferme_id == ferme_id).all()
 
+def get_lots(db: Session, skip: int = 0, limit: int = 100, ferme_id: int = None):
+    query = db.query(LotRecolte)
+    if ferme_id:
+        query = query.filter(LotRecolte.ferme_id == ferme_id)
+    return query.offset(skip).limit(limit).all()
+
 def get_lot_by_id(db: Session, lot_id: int):
     return db.query(LotRecolte).filter(LotRecolte.id == lot_id).first()
 
