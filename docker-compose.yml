@@ -106,6 +106,7 @@ services:
     build:
       context: .
       dockerfile: src/Dockerfile.api
+    image: eco-agri-backend-api
     container_name: backend_api
     dns:
       - 8.8.8.8
@@ -118,7 +119,6 @@ services:
       - ./uploads:/app/uploads
       - ./data:/app/data
       - ./.env:/app/.env
-
     ports:
       - "8000:8000"
     networks:
@@ -145,12 +145,14 @@ services:
       --allowed-hosts "*"
     networks:
       - eco_network
+  
 
   # --- FRONTEND : Next.js App ---
   frontend:
     build:
       context: ../Projet-Eco-Agronomist-IA-Frontend/app-ergonomie
       dockerfile: Dockerfile
+    image: eco-agri-frontend
     container_name: frontend_app
     restart: always
     ports:
@@ -159,6 +161,9 @@ services:
       - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
     depends_on:
       - api-service
+    volumes:
+      - ../Projet-Eco-Agronomist-IA-Frontend/app-ergonomie:/app
+      - /app/node_modules
     networks:
       - eco_network
 
