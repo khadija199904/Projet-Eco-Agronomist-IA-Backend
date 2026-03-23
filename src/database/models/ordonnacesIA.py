@@ -13,7 +13,7 @@ class TreatmentRAG(Base):
     
     # Ce que le RAG a trouvé
     nom_maladie = Column(String, nullable=False)  # ex: "Rouille du blé"
-    recommandation = Column(Text, nullable=False) # L'ordonnance complète
+    ordonnance = Column(Text, nullable=False) # L'ordonnance complète
     sources_utilisees = Column(String)            # ex: "ONSSA, Book Universel"
     
     # Infos automatiques
