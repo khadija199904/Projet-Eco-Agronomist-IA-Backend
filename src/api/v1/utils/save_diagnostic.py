@@ -14,7 +14,9 @@ def save_diagnostic_image(im_array: np.ndarray) -> str:
     image_path = os.path.join(target_dir, unique_filename)
         
         
-    image_annote = cv2.imwrite(image_path, im_array)
+    
+    im_bgr = cv2.cvtColor(im_array, cv2.COLOR_RGB2BGR)
+    image_annote = cv2.imwrite(image_path, im_bgr)
     
     if not image_annote:
         raise IOError(f"Impossible de sauvegarder l'image dans {image_path}")
