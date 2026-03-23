@@ -9,6 +9,8 @@ def get_models():
         models['plant'] = YOLO(PLANT_MODEL_PATH)
         models['valorisation'] = YOLO(VALORISATION_MODEL_PATH)
         print("Modèles chargés avec succès.")
+        print(models['plant'].info())
+        
     except Exception as e:
         print(f"Erreur de chargement: {e}")
         

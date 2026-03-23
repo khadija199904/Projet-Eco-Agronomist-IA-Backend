@@ -1,4 +1,4 @@
-from src.ai.rag.engine import ask_onssa_advisor, ask_onssa_ordonnance
+from src.ai.rag.engine import ask_onssa
 
 async def query_rag(question: str) -> dict:
     """
@@ -19,7 +19,7 @@ async def get_ordonnance(pathologies: list, culture: str = None) -> str:
     
     question = f"Génère une ordonnance pour traiter {', '.join(pathologies)} sur une culture de {culture or 'plante'}."
     try:
-        result = ask_onssa_ordonnance(question)
+        result = ask_onssa(question)
         return result.get("answer", "Information non disponible.")
     except Exception as e:
         return f"Erreur lors de la génération de l'ordonnance : {str(e)}"

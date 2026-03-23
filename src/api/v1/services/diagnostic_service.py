@@ -12,18 +12,21 @@ from src.api.v1.utils.model_loader import get_models
 from src.api.v1.utils.save_diagnostic import save_diagnostic_image
 from src.api.v1.utils.mlflow_utils import track_diagnostic
 
-
+MODELS = get_models() 
+PLANT_MODEL = MODELS.get('plant')
+VALORISATION_MODEL = MODELS.get('valorisation')
 
 def run_plant_prediction(image_data: bytes):
     """Exécute la prédiction YOLO pour les plantes directement depuis le fichier en mémoire."""
-    models = get_models()
-    model = models.get('plant')
-    if not model:
+    
+    if not PLANT_MODEL:
         
         return "Inconnu", {"label": "Service IA indisponible"}, [], None
     
-    image = Image.open(io.BytesIO(image_data)).convert("RGB")
-    results = model(image, conf=0.25)
+    nparr = np.frombuffer(image_data, np.uint8)
+    image = cv2.imdecode(nparr, cv2.IMREAD_COLOR) # Décodage ultra-rapide
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    results = PLANT_MODEL(image, conf=0.25)
     
     if not results or len(results[0].boxes) == 0:
         # return "Sain", {"label": "Sain", "confidence": 100.0, "pathologies": []}, [], None
@@ -91,14 +94,14 @@ def run_plant_prediction(image_data: bytes):
     current_model_path = os.getenv("PLANT_MODEL_PATH", "Inconnu")
 
     # Logging MLflow via utilitaire
-    track_diagnostic(
-        run_name="Plant_Diagnostic",
-        model_type="YOLO_Plant",
-        model_path=current_model_path,
-        metrics={"confidence": best_det["conf"]},
-        params={"disease_detected": disease_fr, "crop": crop_name},
-        image_path=image_path
-    )
+    # track_diagnostic(
+    #    run_name="Plant_Diagnostic",
+    #    model_type="YOLO_Plant",
+    #    model_path=current_model_path,
+    #    metrics={"confidence": best_det["conf"]},
+    #    params={"disease_detected": disease_fr, "crop": crop_name},
+    #    image_path=image_path
+    #)
 
     return disease_fr, detection_details, pathologies_fr ,image_path
 
@@ -112,15 +115,15 @@ async def get_rag_ordonnance(pathologies: list, culture: str = None):
 
 def run_valorisation_prediction(image_data: bytes):
     """Exécute la prédiction YOLO pour le contrôle qualité (Valorisation)."""
-    models = get_models()
-    model = models.get('valorisation')
-    print(model)
-    if not model:
+    
+    if not VALORISATION_MODEL:
         return {}, 0.0, 0.0, "ERREUR", {"label": "Service IA indisponible"}, None
 
     # Chargement de l'image
-    image = Image.open(io.BytesIO(image_data)).convert("RGB")
-    results = model(image, conf=0.25)
+    nparr = np.frombuffer(image_data, np.uint8)
+    image = cv2.imdecode(nparr, cv2.IMREAD_COLOR) # Décodage ultra-rapide
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    results = VALORISATION_MODEL(image, conf=0.25)
     
     visual_defects = {}
     healthy_score = 1.0
@@ -180,49 +183,13 @@ def run_valorisation_prediction(image_data: bytes):
     # Récupérer le chemin actuel pour le log MLflow
     current_model_path = os.getenv("VALORISATION_MODEL_PATH", "Inconnu")
 
-    track_diagnostic(
-        run_name="Valorisation_Diagnostic",
-        model_type="YOLO_Valorisation",
-        model_path=current_model_path,
-        metrics=metrics,
-        params={"decision": decision},
-        image_path=image_path
-    )
+   # track_diagnostic(
+    #    run_name="Valorisation_Diagnostic",
+     #   model_type="YOLO_Valorisation",
+      #  model_path=current_model_path,
+       # metrics=metrics,
+        #params={"decision": decision},
+        #image_path=image_path
+    #)
 
     return visual_defects, healthy_score, taux_defauts, decision, detection_details, image_path
-
-# async def analyze_frame(frame_bytes: bytes):
-#     """Inférence rapide sur une frame vidéo (bytes)."""
-#     nparr = np.frombuffer(frame_bytes, np.uint8)
-#     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    
-#     models = get_models()
-#     model = models.get('plant') # Utilise le modèle plante par défaut pour le streaming
-#     if not model:
-#         return {"label": "Service IA indisponible", "confidence": 0, "boxes": []}
-
-#     results = model(img)
-    
-#     if len(results) > 0 and len(results[0].boxes) > 0:
-#         best_box = results[0].boxes[0]
-#         class_id = int(best_box.cls[0].item())
-        
-#         boxes = []
-#         for box in results[0].boxes:
-#             b_class_id = int(box.cls[0].item())
-#             boxes.append({
-#                 "x_min": float(box.xyxy[0][0].item()),
-#                 "y_min": float(box.xyxy[0][1].item()),
-#                 "x_max": float(box.xyxy[0][2].item()),
-#                 "y_max": float(box.xyxy[0][3].item()),
-#                 "confidence": float(box.conf[0].item()),
-#                 "label": results[0].names[b_class_id]
-#             })
-
-#         return {
-#             "label": results[0].names[class_id],
-#             "confidence": float(best_box.conf[0].item()),
-#             "boxes": boxes
-#         }
-    
-#     return {"label": "Sain", "confidence": 1.0, "boxes": []}
