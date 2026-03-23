@@ -1,0 +1,14 @@
+names:
+- fresh
+- rotten
+nc: 2
+path: /teamspace/studios/this_studio/Projet-Eco-Agronomist-IA-Backend/data/silver/Fresh-Rotten
+roboflow:
+  license: CC BY 4.0
+  project: fresh-rotten-1-gncme
+  url: https://universe.roboflow.com/diora-coqcr/fresh-rotten-1-gncme/dataset/4
+  version: 4
+  workspace: diora-coqcr
+test: ../test/images
+train: ../train/images
+val: ../valid/images

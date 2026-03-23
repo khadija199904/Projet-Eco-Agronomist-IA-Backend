@@ -1,0 +1,24 @@
+names:
+  0: Corn leaf blight
+  1: Corn rust leaf
+  2: Tomato leaf late blight
+  3: Tomato mold leaf
+  4: Tomato leaf yellow virus
+  5: Blueberry leaf
+  6: Tomato leaf mosaic virus
+  7: Tomato leaf bacterial spot
+  8: Squash Powdery mildew leaf
+  9: Corn Gray leaf spot
+  10: Tomato Early blight leaf
+  11: Tomato Septoria leaf spot
+  12: Tomato leaf
+  13: Bell_pepper leaf spot
+  14: Bell_pepper leaf
+  15: Tomato two spotted spider mites leaf
+  16: Nutrient Deficiencies
+  17: White bugs
+nc: 18
+path: /teamspace/studios/this_studio/Projet-Eco-Agronomist-IA-Backend/data/silver/detection_maladies_plantes
+test: test/images
+train: train/images
+val: val/images
