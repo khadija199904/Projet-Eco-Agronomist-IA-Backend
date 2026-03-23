@@ -6,9 +6,12 @@ from src.api.v1.dependencies.user import get_current_user
 from src.api.v1.schemas.diagnostic_schema import (
     PlantDiagnosticCreate, PlantDiagnosticResponse, 
     ProductDiagnosticCreate, ProductDiagnosticResponse,
-    DiagnosticListResponse, DiagnosticHistoryItem
+    DiagnosticListResponse, DiagnosticHistoryItem,
+    TreatmentRAGResponse
 )
-from src.api.v1.crud import diagnostic_crud , lot_crud
+
+from src.api.v1.crud import diagnostic_crud, lot_crud, rag_crud
+
 from src.api.v1.services import diagnostic_service
 from src.database.models.users import User
 from src.database.models.enums import UserRole, DiagnosticType
@@ -32,22 +35,57 @@ async def diagnose_plant_disease(
         raise HTTPException(status_code=400, detail="L'utilisateur n'est rattaché à aucune organisation.")
 
     image_bytes = await file.read()
-    disease_fr, det_details, pathologies_fr,image_path = diagnostic_service.run_plant_prediction(image_bytes)
+    disease_fr, det_details, pathologies_fr, image_path = diagnostic_service.run_plant_prediction(image_bytes)
 
-    try:
-       
-        advice = await diagnostic_service.generate_plant_advice(pathologies_fr)
-    except Exception:
-        advice = "Conseil temporairement indisponible."
         
     diag_create = PlantDiagnosticCreate(
         organization_id=org_id,
-         image_url=image_path,
+        image_url=image_path,
         disease_detected=disease_fr,
         detection_details=det_details
     )
     
     return diagnostic_crud.create_plant_diagnostic(db, diag_create)
+
+
+@router.post("/{diagnostic_id}/ordonnance", response_model=TreatmentRAGResponse)
+async def get_ordonnance_ia(
+    diagnostic_id: int,
+    culture: Optional[str] = Form(None),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    """
+    Génère une ordonnance IA (RAG) à la demande pour un diagnostic existant.
+    """
+    # 1. Vérifier si le diagnostic existe
+    diag = diagnostic_crud.get_plant_diagnostic_by_id(db, diagnostic_id)
+    if not diag:
+        raise HTTPException(status_code=404, detail="Diagnostic introuvable.")
+
+    # 2. Extraire les pathologies (depuis les détails stockés)
+    pathologies = diag.detection_details.get("pathologies", [])
+    if not pathologies:
+        # Fallback sur le label principal si pas de liste
+        pathologies = [diag.disease_detected] if diag.disease_detected else []
+
+    try:
+        # 3. Appel du service RAG
+        advice_text = await diagnostic_service.get_rag_ordonnance(pathologies, culture=culture)
+        
+        # 4. Sauvegarder dans la table RAG
+        return rag_crud.create_treatment_rag(
+            db, 
+            diagnostic_id=diagnostic_id,
+            nom_maladie=diag.disease_detected or "Inconnue",
+            ordonnance=advice_text,
+            sources="RAG Assistant (ONSSA Knowledge)"
+        )
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur lors de la génération : {str(e)}")
+
+
 
 @router.post("/product", response_model=ProductDiagnosticResponse)
 async def valorize_product(

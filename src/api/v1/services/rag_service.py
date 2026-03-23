@@ -1,22 +1,25 @@
-async def generate_plant_advice(pathologies: list, culture: str = None):
+from src.ai.rag.engine import ask_onssa_advisor, ask_onssa_ordonnance
+
+async def query_rag(question: str) -> dict:
     """
-    RÔLE : Intelligence métier et conseils ONSSA.
-    Inclut la culture pour des conseils plus précis.
+    RÔLE : Interroge le moteur RAG en mode ADVISOR (Chat général).
+    """
+    try:
+        result = ask_onssa(question)
+        return result
+    except Exception as e:
+        return {"error": str(e)}
+
+async def get_ordonnance(pathologies: list, culture: str = None) -> str:
+    """
+    RÔLE : Génère une ordonnance formelle via RAG pour une liste de pathologies.
     """
     if not pathologies:
-        return "Aucune pathologie détectée. Maintenez une irrigation régulière et surveillez l'apparition de taches."
-
-    # Simulation d'appel à votre moteur RAG (LangChain / OpenAI / Llama Index)
-    # prompt = f"En tant qu'expert agronome, donnez des conseils ONSSA pour traiter {', '.join(pathologies)} sur une culture de {culture or 'plante'}."
+        return "Aucune pathologie détectée."
     
-    # Pour la démo, on utilise un mapping simple
-    advices_map = {
-        "Septoriose": f"Pour votre culture de {culture or 'plante'}, utilisez un fongicide homologué contre la septoriose et évitez l'irrigation par aspersion.",
-        "Mildiou": f"Le mildiou sur {culture or 'plante'} nécessite un traitement préventif à base de cuivre et une bonne aération.",
-        "Sain": "Votre plante est en bonne santé. Continuez le suivi régulier."
-    }
-    
-    main_disease = pathologies[0] if pathologies else "Sain"
-    advice = advices_map.get(main_disease, f"Surveillez l'évolution de votre {culture or 'plante'} et consultez un expert si les symptômes de {main_disease} persistent.")
-
-    return advice
+    question = f"Génère une ordonnance pour traiter {', '.join(pathologies)} sur une culture de {culture or 'plante'}."
+    try:
+        result = ask_onssa_ordonnance(question)
+        return result.get("answer", "Information non disponible.")
+    except Exception as e:
+        return f"Erreur lors de la génération de l'ordonnance : {str(e)}"

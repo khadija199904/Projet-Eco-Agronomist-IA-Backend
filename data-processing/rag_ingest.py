@@ -1,56 +1,66 @@
 import os
-from supabase import create_client
-from langchain_community.document_loaders import PyPDFLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from sentence_transformers import SentenceTransformer
-from src.core.config import SUPABASE_URL, SUPABASE_KEY  
-from src.core.config import ONSSA_PDF_PATH, RAP_PDF_PATH, INRA_PDF_PATH
+import re
+import uuid
+import pdfplumber
+from pinecone import Pinecone
+from langchain_huggingface import HuggingFaceEmbeddings
+from src.core.config import PINECONE_API_KEY, PINECONE_INDEX_NAME, ONSSA_PDF1_PATH, ONSSA_PDF2_PATH
 
-PDF_PATHS = [ONSSA_PDF_PATH, RAP_PDF_PATH, INRA_PDF_PATH]
+# ── Config ───────────────────────────────────────────────────────────────────
+PDF_PATHS = [ONSSA_PDF1_PATH, ONSSA_PDF2_PATH]
 
-# 1. Initialisation des clients
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2') 
+embeddings = HuggingFaceEmbeddings(model_name="paraphrase-multilingual-MiniLM-L12-v2")
+pc = Pinecone(api_key=PINECONE_API_KEY)
+index = pc.Index(PINECONE_INDEX_NAME)
+
+
+def extract_text(path: str) -> str:
+    text = ""
+    with pdfplumber.open(path) as pdf:
+        for page in pdf.pages:
+            text += page.extract_text() or ""
+    return text
+
+
+def split_fiches(text: str) -> list:
+    """Chaque fiche FICHE_TRAITEMENT devient un chunk."""
+    parts = re.split(r"-*FICHE_TRAITEMENT:", text)
+    return [
+        "FICHE_TRAITEMENT: " + p.strip()
+        for p in parts
+        if len(p.strip()) > 50
+    ]
+
 
 def run_ingestion():
-    # 2. Configuration du splitter
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000, 
-        chunk_overlap=200,
-        separators=["\n\n", "\n", " ", ""]
-    )
-
-    all_data = []
+    all_vectors = []
 
     for path in PDF_PATHS:
-        if not os.path.exists(path):
-            print(f"Fichier non trouvé : {path}")
+        if not path or not os.path.exists(path):
+            print(f"Ignoré : {path}")
             continue
-            
-        print(f"Lecture de : {path}")
-        loader = PyPDFLoader(path)
-        pages = loader.load()
-        chunks = text_splitter.split_documents(pages)
 
-        for i, chunk in enumerate(chunks):
-            # 3. Génération du vecteur (Embedding)
-            print(f"  -> Vectorisation chunk {i}/{len(chunks)}...", end="\r")
-            vector = model.encode(chunk.page_content).tolist()
+        print(f"Lecture : {path}")
+        fiches = split_fiches(extract_text(path))
+        print(f"  {len(fiches)} fiches trouvées")
 
-            all_data.append({
-                "content": chunk.page_content,
-                "metadata": {"source": path, "page": chunk.metadata.get("page")},
-                "embedding": vector
+        for i, fiche in enumerate(fiches):
+            print(f"  Embedding {i+1}/{len(fiches)}...", end="\r")
+            all_vectors.append({
+                "id": str(uuid.uuid4()),
+                "values": embeddings.embed_query(fiche),
+                "metadata": {
+                    "text": fiche[:2000],
+                    "source": os.path.basename(path),
+                }
             })
 
-    # 4. Envoi groupé vers Supabase
-    if all_data:
-        print(f" Envoi de {len(all_data)} chunks vers Supabase...")
-        for i in range(0, len(all_data), 100):
-            batch = all_data[i : i + 100]
-            supabase.table("documents").insert(batch).execute()
-        
-        print("Terminé ! Tes PDF sont indexés.")
+    if all_vectors:
+        print(f"\nEnvoi de {len(all_vectors)} vecteurs vers Pinecone...")
+        for i in range(0, len(all_vectors), 100):
+            index.upsert(vectors=all_vectors[i:i+100])
+        print("Indexation terminée.")
+
 
 if __name__ == "__main__":
     run_ingestion()

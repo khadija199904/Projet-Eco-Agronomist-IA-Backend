@@ -107,7 +107,8 @@ async def get_rag_ordonnance(pathologies: list, culture: str = None):
     Récupère les recommandations RAG en incluant la culture pour plus de précision.
     """
     from src.api.v1.services import rag_service
-    return await rag_service.generate_plant_advice(pathologies, culture)
+    return await rag_service.get_ordonnance(pathologies, culture)
+
 
 def run_valorisation_prediction(image_data: bytes):
     """Exécute la prédiction YOLO pour le contrôle qualité (Valorisation)."""

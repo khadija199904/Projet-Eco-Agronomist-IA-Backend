@@ -27,9 +27,12 @@ class PlantDiagnosticCreate(PlantDiagnosticBase):
 class PlantDiagnosticResponse(PlantDiagnosticBase):
     id: int
     created_at: datetime
-    treatment_advice: Optional[TreatmentRAGResponse] = None
+    # On garde treatments pour les détails d'ordonnance si présents
+    treatments: Optional[Optional[List[TreatmentRAGResponse]]] = []
     
     model_config = ConfigDict(from_attributes=True)
+
+
 
 
 # --- 2. POLE VALORISATION (Station) ---

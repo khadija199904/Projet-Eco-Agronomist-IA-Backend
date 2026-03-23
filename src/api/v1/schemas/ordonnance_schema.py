@@ -2,9 +2,17 @@ from pydantic import BaseModel, ConfigDict
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 
+
+class QueryRequest(BaseModel):
+    question: str
+
+class QueryResponse(BaseModel):
+    answer: str
+    sources: list[str]
+
 class TreatmentRAGBase(BaseModel):
     nom_maladie: str
-    recommandation: str
+    ordonnance: str
     sources_utilisees: Optional[str] = None
 
 class TreatmentRAGCreate(TreatmentRAGBase):
