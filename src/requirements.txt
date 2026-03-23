@@ -27,8 +27,5 @@ langchain-groq
 pytest
 
 
-
 # ml
-ultralytics
 onnx
-

@@ -1,4 +1,4 @@
-from pydantic import EmailStr, BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from src.database.models.enums import UserRole
 

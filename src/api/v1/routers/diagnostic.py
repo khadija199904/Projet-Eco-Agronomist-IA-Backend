@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form
 from sqlalchemy.orm import Session
 from typing import Optional
 from src.api.v1.dependencies.db import get_db
@@ -17,7 +17,7 @@ from src.api.v1.services import diagnostic_service
 from src.database.models.users import User
 from src.database.models.enums import UserRole, DiagnosticType
 from src.database.models.diagnostics_table import UniversalDiagnostic
-from src.core.security import verify_token
+
 
 
 router = APIRouter()

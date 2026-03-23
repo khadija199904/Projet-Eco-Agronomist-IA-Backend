@@ -2,8 +2,7 @@ from sqlalchemy.orm import Session
 from src.database.models.diagnostics_table import UniversalDiagnostic
 from src.database.models.ordonnacesIA import TreatmentRAG
 from src.database.models.enums import DiagnosticType
-from src.api.v1.schemas.diagnostic_schema import PlantDiagnosticCreate, TreatmentRAGCreate, ProductDiagnosticCreate
-from src.api.v1.schemas.diagnostic_schema import ConsumerDiagnosticCreate
+from src.api.v1.schemas.diagnostic_schema import PlantDiagnosticCreate, TreatmentRAGCreate, ProductDiagnosticCreate, ConsumerDiagnosticCreate
 
 def create_plant_diagnostic(db: Session, diagnostic: PlantDiagnosticCreate):
     diagnostic_data = diagnostic.model_dump(exclude={"treatments"})

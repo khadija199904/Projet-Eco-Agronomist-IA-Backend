@@ -1,11 +1,6 @@
 import os
-import shutil
-import uuid
 import cv2
 import numpy as np
-import io
-from PIL import Image
-from fastapi import UploadFile
 from src.core.mapping import TRANSLATION_MAP, SHORT_CODE_MAP, CROP_MAP
 from src.core.config import PLANT_MODEL_PATH, VALORISATION_MODEL_PATH , CONSUMER_MODEL_PATH
 from src.api.v1.utils.model_loader import get_models

@@ -4,12 +4,7 @@ from datetime import datetime
 from .ordonnance_schema import TreatmentRAGCreate, TreatmentRAGResponse
 
 
-class DetectionDetail(BaseModel):
-    """Unified structure for IA detection results"""
-    label: str
-    confidence: float
-    bbox: Optional[List[float]] = None
-    status: str = "detected"
+
 
 
 # --- 1. POLE PRODUCTION (Ferme) ---
@@ -28,7 +23,7 @@ class PlantDiagnosticResponse(PlantDiagnosticBase):
     id: int
     created_at: datetime
     # On garde treatments pour les détails d'ordonnance si présents
-    treatments: Optional[Optional[List[TreatmentRAGResponse]]] = []
+    treatments: Optional[List[TreatmentRAGResponse]] = []
     
     model_config = ConfigDict(from_attributes=True)
 
