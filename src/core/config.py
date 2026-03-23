@@ -8,13 +8,16 @@ import urllib.parse
 load_dotenv(override=True)
 
 
-ONSSA_PDF_PATH = os.getenv("ONSSA_PDF_PATH")
-RAP_PDF_PATH = os.getenv("RAP_PDF_PATH")
-INRA_PDF_PATH = os.getenv("INRA_PDF_PATH")
+ONSSA_PDF1_PATH = os.getenv("ONSSA_PDF1_PATH")
+ONSSA_PDF2_PATH = os.getenv("ONSSA_PDF2_PATH")
 
 EMBEDDING_MODEL_NAME= os.getenv("EMBEDDING_MODEL_NAME")
 VECTOR_DB_DIR = os.getenv("VECTOR_DB_DIR")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+
+PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
+PINECONE_INDEX_NAME = os.getenv("PINECONE_INDEX_NAME","eco-agronomist")
+
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
