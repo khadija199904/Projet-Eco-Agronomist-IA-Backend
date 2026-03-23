@@ -5,7 +5,7 @@ import urllib.parse
 # import chromadb
 
 # Load environment variables from .env
-load_dotenv()
+load_dotenv(override=True)
 
 
 ONSSA_PDF_PATH = os.getenv("ONSSA_PDF_PATH")
@@ -15,6 +15,8 @@ INRA_PDF_PATH = os.getenv("INRA_PDF_PATH")
 EMBEDDING_MODEL_NAME= os.getenv("EMBEDDING_MODEL_NAME")
 VECTOR_DB_DIR = os.getenv("VECTOR_DB_DIR")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_KEY")
@@ -31,8 +33,13 @@ class Settings:
 
     # Paths
     PLANT_MODEL_PATH: str = os.getenv("PLANT_MODEL_PATH", "artifacts/plants/maladies_plant5_v1.pt")
-    VALORISATION_MODEL_PATH: str = os.getenv("VALORISATION_MODEL_PATH", "artifacts/valorisation/qualite_v1.pt")
+    VALORISATION_MODEL_PATH: str = os.getenv("VALORISATION_MODEL_PATH", "artifacts/products/agrivision_anomaly_s_v1/agrivision_anomaly_s.pt")
     UPLOAD_DIR: str = "uploads/diagnostics"
+    
+    # MLflow
+    MLFLOW_TRACKING_URI: str = os.getenv("MLFLOW_TRACKING_URI", "http://mlflow:5000") # Docker internal name
+    MLFLOW_EXPERIMENT_NAME: str = os.getenv("MLFLOW_EXPERIMENT_NAME", "Diagnostic_Tracking")
+
 
     # Database
     DATABASE_URL: str = os.getenv("DATABASE_URL")
@@ -51,6 +58,8 @@ settings = Settings()
 
 PLANT_MODEL_PATH = settings.PLANT_MODEL_PATH
 VALORISATION_MODEL_PATH = settings.VALORISATION_MODEL_PATH
+MLFLOW_TRACKING_URI = settings.MLFLOW_TRACKING_URI
+MLFLOW_EXPERIMENT_NAME = settings.MLFLOW_EXPERIMENT_NAME
 SECRET_KEY = settings.SECRET_KEY
 DATABASE_URL = settings.DATABASE_URL
 

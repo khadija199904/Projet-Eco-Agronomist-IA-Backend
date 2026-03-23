@@ -18,12 +18,12 @@ app = FastAPI(
 Base.metadata.create_all(bind=engine)
 
 
-# setup_cors(app)
+setup_cors(app)
 
-# app.add_middleware(
-#     TrustedHostMiddleware,
-#     allowed_hosts=settings.ALLOWED_HOSTS,
-# )
+app.add_middleware(
+    TrustedHostMiddleware,
+    allowed_hosts=settings.ALLOWED_HOSTS,
+)
 
 PREFIX = settings.PROJECT_V1_STR
 
@@ -33,6 +33,9 @@ app.include_router(routers.diagnostic,    prefix=f"{PREFIX}/diagnostic",   tags=
 app.include_router(routers.production,    prefix=f"{PREFIX}/production",   tags=["Production & Traçabilité Agricole"])
 app.include_router(routers.valorisation,  prefix=f"{PREFIX}/valorisation", tags=["Valorisation - Traitement Station"])
 app.include_router(routers.advisor,       prefix=f"{PREFIX}/advisor",      tags=["RAG Advisor"])
+
+# Montage du dossier uploads pour servir les images statiques
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 
 

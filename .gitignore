@@ -11,3 +11,5 @@ artifacts/
 data_val_scrap.py
 .github/workflows/ci-cd.yml
 uploads/
+mlruns/
+mlflow.db/

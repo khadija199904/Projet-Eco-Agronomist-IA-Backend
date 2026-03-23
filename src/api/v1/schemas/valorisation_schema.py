@@ -41,3 +41,21 @@ class LotQualityReport(BaseModel):
     decision_finale: Optional[str] = None
     is_finalized: bool = False
     date_rapport: datetime
+
+
+# --- RECEPTION STATION ---
+class ReceptionStationBase(BaseModel):
+    lot_recolte_id: int
+    poids_reception: float
+    etat_initial: str
+
+class ReceptionStationCreate(ReceptionStationBase):
+    pass
+
+class ReceptionStationResponse(ReceptionStationBase):
+    id: int
+    date_reception: datetime
+    receptionnaire_id: int
+
+    class Config:
+        from_attributes = True

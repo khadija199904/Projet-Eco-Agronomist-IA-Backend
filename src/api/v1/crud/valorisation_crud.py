@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
-from src.database.models.valorisation_table import TraitementStation
-from src.api.v1.schemas.valorisation_schema import TraitementStationCreate
+from src.database.models.valorisation_table import TraitementStation, ReceptionStation
+from src.api.v1.schemas.valorisation_schema import TraitementStationCreate, ReceptionStationCreate
 from datetime import datetime
 
 def create_traitement_station(db: Session, traitement: TraitementStationCreate):
@@ -33,3 +33,22 @@ def update_traitement_station(db: Session, lot_id: int, data: dict):
     db.commit()
     db.refresh(traitement)
     return traitement
+
+
+# --- RECEPTION CRUD ---
+def create_reception(db: Session, reception: ReceptionStationCreate, receptionnaire_id: int):
+    db_reception = ReceptionStation(
+        **reception.model_dump(),
+        receptionnaire_id=receptionnaire_id
+    )
+    db.add(db_reception)
+    db.commit()
+    db.refresh(db_reception)
+    return db_reception
+
+def get_reception_by_lot(db: Session, lot_id: int):
+    return db.query(ReceptionStation).filter(ReceptionStation.lot_recolte_id == lot_id).first()
+
+def get_all_receptions(db: Session):
+    """Retourne toutes les réceptions enregistrées à la station."""
+    return db.query(ReceptionStation).all()

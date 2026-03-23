@@ -8,89 +8,82 @@ from src.api.v1.schemas.diagnostic_schema import (
     ProductDiagnosticCreate, ProductDiagnosticResponse,
     DiagnosticListResponse, DiagnosticHistoryItem
 )
-from src.api.v1.crud import diagnostic_crud
+from src.api.v1.crud import diagnostic_crud , lot_crud
 from src.api.v1.services import diagnostic_service
-from src.database.models.users import User
 from src.database.models.users import User
 from src.database.models.enums import UserRole, DiagnosticType
 from src.database.models.diagnostics_table import UniversalDiagnostic
 from src.core.security import verify_token
-import json
-import base64
+
 
 router = APIRouter()
 
-@router.post("/upload", summary="Analyser une image (Plante ou Produit)")
-async def upload_and_diagnose(
-    diag_type: str = Form(..., description="Type de diagnostic : 'plante' ou 'produit'"),
-    organization_id: Optional[int] = Form(None),
-    lot_recolte_id: Optional[int] = Form(None),
+@router.post("/plant", response_model=PlantDiagnosticResponse)
+async def diagnose_plant_disease(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+     ):
+    if user.role != UserRole.AGRICULTEUR:
+        raise HTTPException(status_code=403, detail="Accès réservé aux agriculteurs.")
+
+    org_id = user.organization_id
+    if not org_id:
+        raise HTTPException(status_code=400, detail="L'utilisateur n'est rattaché à aucune organisation.")
+
+    image_bytes = await file.read()
+    disease_fr, det_details, pathologies_fr,image_path = diagnostic_service.run_plant_prediction(image_bytes)
+
+    try:
+       
+        advice = await diagnostic_service.generate_plant_advice(pathologies_fr)
+    except Exception:
+        advice = "Conseil temporairement indisponible."
+        
+    diag_create = PlantDiagnosticCreate(
+        organization_id=org_id,
+         image_url=image_path,
+        disease_detected=disease_fr,
+        detection_details=det_details
+    )
+    
+    return diagnostic_crud.create_plant_diagnostic(db, diag_create)
+
+@router.post("/product", response_model=ProductDiagnosticResponse)
+async def valorize_product(
+    lot_recolte_id: int = Form(..., description="ID du lot à analyser"),
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user)
 ):
-    """
-    Analyse une image via IA. 
-    """
-    if diag_type in ["plante", "produit"]:
-        if not organization_id or organization_id == 0:
-            raise HTTPException(
-                status_code=400, 
-                detail=f"L'identifiant de l'organisation est obligatoire pour le pôle {diag_type}."
-            )
+    # Sécurité : Rôle Qualité ou Admin
+    if user.role not in [UserRole.QUALITE, UserRole.ADMIN]:
+        raise HTTPException(status_code=403, detail="Réservé aux contrôleurs qualité.")
     
-    else:
-        organization_id = None
+    org_id = user.organization_id
+    if not org_id:
+        raise HTTPException(status_code=400, detail="L'utilisateur n'est rattaché à aucune organisation.")
+
     
+    lot = lot_crud.get_lot_by_id(db, lot_recolte_id)
+    if not lot:
+        raise HTTPException(status_code=404, detail="Lot de récolte introuvable.")
 
-    if diag_type == "plante":
-        if user.role != UserRole.AGRICULTEUR:
-            raise HTTPException(status_code=403, detail="Réservé aux agriculteurs.")
-
-        
-        image_bytes = await file.read()
-        disease_fr, det_details, pathologies_fr = diagnostic_service.run_prediction(image_bytes)
-
-        try:
-            advice = await diagnostic_service.generate_plant_advice(pathologies_fr)
-        except Exception:
-            advice = "Conseil temporairement indisponible."
-
-        # 3. Sauvegarde DB
-        diag_create = PlantDiagnosticCreate(
-            organization_id=organization_id,
-            disease_detected=disease_fr,
-            treatment_advice=advice or "Aucun conseil disponible pour le moment.",
-            detection_details=det_details 
-        )
-
-        new_diagnostic = diagnostic_crud.create_plant_diagnostic(db, diag_create)
-        
-        return new_diagnostic
-    elif diag_type == "produit":
-        if user.role not in [UserRole.QUALITE, UserRole.ADMIN]:
-            raise HTTPException(status_code=403, detail="Réservé aux contrôleurs qualité.")
-        
-        try:
-            image_path = await diagnostic_service.save_upload_file(file, sub_dir="valorisation")
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Erreur sauvegarde : {e}")
-
-        defects, score, taux, decision, detection_details = diagnostic_service.run_valorisation_prediction(image_path)
-        
-        diag_create = ProductDiagnosticCreate(
-            lot_recolte_id=lot_recolte_id,
-            image_url=image_path,
-            visual_defects=defects,
-            healthy_score=score,
-            taux_defauts_visuels=taux,
-            decision_flux=decision,
-            detection_details=detection_details
-        )
-        return diagnostic_crud.create_diagnostic_product(db, diag_create)
+    # Lecture des bytes
+    image_bytes = await file.read()
+    defects, score, taux, decision, detection_details, annotated_path = diagnostic_service.run_valorisation_prediction(image_bytes)
     
-    else:
-        raise HTTPException(status_code=400, detail="diag_type invalide. Utilisez 'plante' ou 'produit'.")
+    diag_create = ProductDiagnosticCreate(
+        lot_recolte_id=lot_recolte_id,
+        organization_id=org_id,
+        image_url=annotated_path,
+        visual_defects=defects,
+        healthy_score=score,
+        taux_defauts_visuels=taux,
+        decision_flux=decision,
+        detection_details=detection_details
+    )
+    return diagnostic_crud.create_diagnostic_product(db, diag_create)
 
 
 @router.get("/history", response_model=DiagnosticListResponse)
@@ -106,6 +99,9 @@ def get_history(
         raise HTTPException(status_code=403, detail="Accès non autorisé.")
 
     query = db.query(UniversalDiagnostic)
+    
+    if user.role != UserRole.CONSOMMATEUR and user.organization_id:
+        query = query.filter(UniversalDiagnostic.organization_id == user.organization_id)
     
     # Filtrage par pole / type
     if diag_type == "plante":
