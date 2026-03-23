@@ -7,7 +7,8 @@ from src.api.v1.schemas.diagnostic_schema import (
     PlantDiagnosticCreate, PlantDiagnosticResponse, 
     ProductDiagnosticCreate, ProductDiagnosticResponse,
     DiagnosticListResponse, DiagnosticHistoryItem,
-    TreatmentRAGResponse
+    TreatmentRAGResponse,
+    ConsumerDiagnosticCreate, ConsumerDiagnosticResponse
 )
 
 from src.api.v1.crud import diagnostic_crud, lot_crud, rag_crud
@@ -123,7 +124,30 @@ async def valorize_product(
     )
     return diagnostic_crud.create_diagnostic_product(db, diag_create)
 
+@router.post("/consume", response_model=ConsumerDiagnosticResponse)
+async def diagnose_consumer_product(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    """
+    Diagnostic de fraîcheur direct via upload d'image.
+    """
+    # 1. Inférence IA (OpenCV + YOLO)
+    image_bytes = await file.read()
+    label_fr, confidence, det_details, image_path = diagnostic_service.run_freshness_prediction(image_bytes)
 
+    # 2. Préparation du schéma de création
+    diag_data = ConsumerDiagnosticCreate(
+        user_id=user.id,
+        image_url=image_path,
+        freshness_score=confidence,
+        is_edible=(label_fr == "Frais"),
+        detection_details=det_details
+    )
+
+    # 3. Appel du CRUD pour sauvegarde (sans QR code)
+    return diagnostic_crud.create_consumer_diagnostic(db, diag_data)
 @router.get("/history", response_model=DiagnosticListResponse)
 def get_history(
     diag_type: Optional[str] = None,

@@ -8,16 +8,28 @@ from src.api.v1.dependencies.db import get_db
 from src.api.v1.dependencies.user import get_current_user
 from fastapi.security import OAuth2PasswordRequestForm
 from src.database.models.organization_table import Organization
+from src.database.models.enums import UserRole
 
 router = APIRouter()
 
 @router.post('/register', response_model=UserResponse)
 async def register(user: UserCreate, db: Session = Depends(get_db)):
+    # 1. Validation simple des champs obligatoires
     if not user.username.strip() or not user.password.strip() or not user.email.strip():
         raise HTTPException(
             status_code=400,
-            detail="Veuillez remplir tous les champs : nom d'utilisateur et mot de passe."
+            detail="Veuillez remplir tous les champs : email, nom d'utilisateur et mot de passe."
         )
+
+    if user.role in [UserRole.AGRICULTEUR, UserRole.QUALITE]:
+        if not user.organization_id:
+            raise HTTPException(
+                status_code=400, 
+                detail="L'organisation est obligatoire pour Agriculteur et Responsable Qualité."
+            )
+    else:
+        # Pour Admin / Consommateur, on s'assure qu'ils ne sont pas liés à une organisation
+        user.organization_id = None
    
     existing_user = db.query(User).filter((User.email == user.email) | (User.username == user.username)).first() 
     if existing_user:

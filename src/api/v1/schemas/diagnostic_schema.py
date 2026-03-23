@@ -63,7 +63,7 @@ class ConsumerDiagnosticBase(BaseModel):
     image_url: Optional[str] = None
     freshness_score: Optional[float] = None
     is_edible: bool = True
-    defects_found: Optional[Dict[str, Any]] = None
+    detection_details: Optional[Dict[str, Any]] = None
 
 class ConsumerDiagnosticCreate(ConsumerDiagnosticBase):
     pass

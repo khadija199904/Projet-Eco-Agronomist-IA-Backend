@@ -19,6 +19,7 @@ class UniversalDiagnostic(Base):
     lot_recolte_id = Column(Integer, ForeignKey('lots_recolte.id'), nullable=True) # Pour Valorisation
     produit_fini_id = Column(Integer, ForeignKey('produits_finis.id'), nullable=True) # Pour Consommation
     user_id = Column(Integer, ForeignKey('users.id'), nullable=True) # Le consommateur ou l'agent
+    code_qr = Column(String(255), nullable=True) # Pour recherche directe sans table produit fini
     
     # --- Données Communes ---
     image_url = Column(String(255), nullable=True)

@@ -3,6 +3,7 @@ from src.database.models.diagnostics_table import UniversalDiagnostic
 from src.database.models.ordonnacesIA import TreatmentRAG
 from src.database.models.enums import DiagnosticType
 from src.api.v1.schemas.diagnostic_schema import PlantDiagnosticCreate, TreatmentRAGCreate, ProductDiagnosticCreate
+from src.api.v1.schemas.diagnostic_schema import ConsumerDiagnosticCreate
 
 def create_plant_diagnostic(db: Session, diagnostic: PlantDiagnosticCreate):
     diagnostic_data = diagnostic.model_dump(exclude={"treatments"})
@@ -63,3 +64,30 @@ def get_product_diagnostic_by_id(db: Session, diagnostic_id: int):
     if diag and diag.diag_type != DiagnosticType.PRODUCT:
         return None
     return diag
+
+
+
+def create_consumer_diagnostic(db: Session, obj_in: ConsumerDiagnosticCreate):
+    """
+    Crée un diagnostic de consommation sans recherche de produit fini.
+    """
+    db_obj = UniversalDiagnostic(
+        diag_type=DiagnosticType.CONSUMER,
+        user_id=obj_in.user_id,
+        image_url=obj_in.image_url,
+        freshness_score=obj_in.freshness_score,
+        is_edible=obj_in.is_edible,
+        detection_details=obj_in.detection_details,
+        disease_detected="Frais" if obj_in.is_edible else "Pourri"
+    )
+
+    db.add(db_obj)
+    db.commit()
+    db.refresh(db_obj)
+    return db_obj
+
+def get_consumer_diagnostics_by_user(db: Session, user_id: int, skip: int = 0, limit: int = 100):
+    return db.query(UniversalDiagnostic)\
+             .filter(UniversalDiagnostic.diag_type == DiagnosticType.CONSUMER, 
+                     UniversalDiagnostic.user_id == user_id)\
+             .offset(skip).limit(limit).all()

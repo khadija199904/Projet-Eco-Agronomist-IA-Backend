@@ -7,7 +7,7 @@ import io
 from PIL import Image
 from fastapi import UploadFile
 from src.core.mapping import TRANSLATION_MAP, SHORT_CODE_MAP, CROP_MAP
-from src.core.config import PLANT_MODEL_PATH, VALORISATION_MODEL_PATH
+from src.core.config import PLANT_MODEL_PATH, VALORISATION_MODEL_PATH , CONSUMER_MODEL_PATH
 from src.api.v1.utils.model_loader import get_models
 from src.api.v1.utils.save_diagnostic import save_diagnostic_image
 from src.api.v1.utils.mlflow_utils import track_diagnostic
@@ -15,6 +15,7 @@ from src.api.v1.utils.mlflow_utils import track_diagnostic
 MODELS = get_models() 
 PLANT_MODEL = MODELS.get('plant')
 VALORISATION_MODEL = MODELS.get('valorisation')
+CONSUMER_MODEL = MODELS.get('consumer')
 
 def run_plant_prediction(image_data: bytes):
     """Exécute la prédiction YOLO pour les plantes directement depuis le fichier en mémoire."""
@@ -193,3 +194,51 @@ def run_valorisation_prediction(image_data: bytes):
     #)
 
     return visual_defects, healthy_score, taux_defauts, decision, detection_details, image_path
+
+def run_freshness_prediction(image_data: bytes):
+    """
+    Exécute la prédiction YOLO pour classer le produit : Frais (Fresh) ou Pourri (Rotten).
+    Utilise OpenCV pour un prétraitement rapide.
+    """
+    
+    if not CONSUMER_MODEL:
+        return "Inconnu", 0.0, {"label": "Service IA indisponible"}, None
+
+   
+    np_arr = np.frombuffer(image_data, np.uint8)
+    image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+    # Inférence YOLO
+   
+    results = CONSUMER_MODEL(image, conf=0.30)
+    
+    if not results or len(results[0].boxes) == 0:
+        return "Indéterminé", 0.0, {"label": "Aucun produit détecté"}, None
+
+    result = results[0]
+   
+    cls_id = int(result.boxes[0].cls[0])
+    label_en = result.names[cls_id] # "Fresh" ou "Rotten"
+    confidence = round(float(result.boxes[0].conf[0]), 2)
+
+    # Traduction simple pour le consommateur
+    status_map = {
+        "Fresh": "Frais",
+        "Rotten": "pourri",
+        
+    }
+    label_fr = status_map.get(label_en, label_en)
+
+    # 4. Génération de l'image annotée pour le retour visuel client
+    im_array = result.plot()
+    image_path = save_diagnostic_image(im_array)
+
+    detection_details = {
+        "label": label_fr,
+        "confidence": confidence,
+        "status_code": "GREEN" if label_en == "Fresh" else "RED",
+        "image_url": image_path
+    }
+
+    return label_fr, confidence, detection_details, image_path
