@@ -15,4 +15,5 @@ mlruns/
 mlflow.db
 .github/
 
-configml/
+
+src/ai/ml/configml/
