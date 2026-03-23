@@ -25,3 +25,11 @@ langchain-chroma
 chromadb
 sentence-transformers
 langchain-groq
+pytest
+
+
+
+# ml
+ultralytics
+onnx
+

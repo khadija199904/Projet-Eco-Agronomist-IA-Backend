@@ -3,16 +3,21 @@ name = "projet-eco-agronomist-ia-backend"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 dependencies = [
     "dotenv>=0.9.9",
+    "kagglehub>=1.0.0",
+    "onnxruntime>=1.24.3",
+    "onnxslim>=0.1.87",
+    "torch>=2.10.0",
+    "ultralytics>=8.4.21",
     "easyocr>=1.7.2",
     "fastapi>=0.135.1",
     "icrawler>=0.6.10",
     "imagehash>=4.3.2",
     "kaggle==2.0.0",
-    "kagglehub==1.0.0",
     "kagglesdk==0.1.15",
+    "matplotlib>=3.10.8",
     "opencv-python>=4.13.0.92",
     "pandas>=3.0.1",
     "passlib[argon2]>=1.7.4",

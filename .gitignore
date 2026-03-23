@@ -11,3 +11,13 @@ artifacts/
 data_val_scrap.py
 .github/workflows/ci-cd.yml
 
+# --- ML & Training ---
+src/ml/runs/
+src/ml/configml
+*.pt
+artifacts/models_saved/
+runs/
+mlruns/
+mlflow.db
+.github/
+
