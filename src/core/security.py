@@ -15,8 +15,14 @@ def verify_password_hash(password: str, hashed_password: str):
 
 
 
-def create_access_token(user:dict):
-    payload = { "id": user.id}
+def create_access_token(user):
+    payload = { 
+        "id": user.id,
+        "sub": user.username,
+        "email": user.email,
+        "role": user.role.value if hasattr(user.role, 'value') else user.role,
+        "organization_id": user.organization_id
+    }
 
     token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
 

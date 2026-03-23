@@ -10,6 +10,8 @@ psycopg2-binary
 passlib[argon2]
 python-jose
 python-multipart
+mlflow
+
 
 
 # RAG 
@@ -17,12 +19,9 @@ python-multipart
 langchain
 langchain-community 
 langchain-core
-langchain-classic 
-pypdf
+pdfplumber
 langchain-text-splitters
 langchain-huggingface 
-langchain-chroma
-chromadb
 sentence-transformers
 langchain-groq
 pytest

@@ -21,3 +21,6 @@ mlruns/
 mlflow.db
 .github/
 
+uploads/
+mlruns/
+mlflow.db/

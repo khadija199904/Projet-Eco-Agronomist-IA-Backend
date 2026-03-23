@@ -240,6 +240,71 @@ Projet-Eco-Agronomist-IA-Backend/
 ```
 
 ---
+### 1. Configuration de Supabase (Base Vectorielle)
+
+Pour le système RAG, nous utilisons Supabase avec l'extension `pgvector`.
+
+#### Initialisation de la Base de Données
+
+1. **Activer l'extension vector** :
+   Dans l'éditeur SQL de Supabase, exécutez :
+   ```sql
+   CREATE EXTENSION IF NOT EXISTS vector;
+   ```
+
+2. **Créer la table `documents`** :
+   ```sql
+   create table documents (
+     id bigserial primary key,
+     content text,
+     metadata jsonb,
+     embedding vector(384)
+   );
+   ```
+
+3. **Désactiver la RLS (Row Level Security)** (pour le développement) :
+   ```sql
+   alter table documents disable row level security;
+   ```
+
+4. **Créer la fonction de recherche vectorielle** :
+   Indispensable pour que le moteur RAG puisse interroger la base :
+   ```sql
+   create or replace function match_documents (
+     query_embedding vector(384),
+     match_threshold float,
+     match_count int
+   )
+   returns table (
+     id bigint,
+     content text,
+     metadata jsonb,
+     similarity float
+   )
+   language plpgsql
+   as $$
+   begin
+     return query
+     select
+       documents.id,
+       documents.content,
+       documents.metadata,
+       1 - (documents.embedding <=> query_embedding) as similarity
+     from documents
+     where 1 - (documents.embedding <=> query_embedding) > match_threshold
+     order by documents.embedding <=> query_embedding
+     limit match_count;
+   end;
+   $$;
+   ```
+
+#### Variables d'environnement
+
+Récupérez votre `URL` et `SERVICE_ROLE_KEY` (ou `ANON_KEY`) dans **Project Settings > API** et ajoutez-les au fichier `.env` :
+```bash
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_KEY=your-service-role-key
+```
 
 ### 2. Stratégie de Tests (Qualité Logicielle)
 

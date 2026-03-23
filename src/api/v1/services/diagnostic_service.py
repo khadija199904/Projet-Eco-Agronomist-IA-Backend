@@ -3,167 +3,244 @@ import shutil
 import uuid
 import cv2
 import numpy as np
+import io
+from PIL import Image
 from fastapi import UploadFile
-from src.core.config import PLANT_MODEL_PATH, VALORISATION_MODEL_PATH
-from src.api.utils.model_loader import get_models
+from src.core.mapping import TRANSLATION_MAP, SHORT_CODE_MAP, CROP_MAP
+from src.core.config import PLANT_MODEL_PATH, VALORISATION_MODEL_PATH , CONSUMER_MODEL_PATH
+from src.api.v1.utils.model_loader import get_models
+from src.api.v1.utils.save_diagnostic import save_diagnostic_image
+from src.api.v1.utils.mlflow_utils import track_diagnostic
 
-UPLOAD_DIR = "uploads/diagnostics"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+MODELS = get_models() 
+PLANT_MODEL = MODELS.get('plant')
+VALORISATION_MODEL = MODELS.get('valorisation')
+CONSUMER_MODEL = MODELS.get('consumer')
 
-async def save_upload_file(upload_file: UploadFile, sub_dir: str = "diagnostics") -> str:
-    """Sauvegarde l'image et retourne le chemin relatif."""
-    target_dir = os.path.join(UPLOAD_DIR, sub_dir)
-    os.makedirs(target_dir, exist_ok=True)
+def run_plant_prediction(image_data: bytes):
+    """Exécute la prédiction YOLO pour les plantes directement depuis le fichier en mémoire."""
     
-    file_extension = upload_file.filename.split(".")[-1]
-    unique_filename = f"{uuid.uuid4().hex}.{file_extension}"
-    file_path = os.path.join(target_dir, unique_filename)
-    
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(upload_file.file, buffer)
-    
-    return file_path
-
-def run_prediction(image_path: str):
-    """Exécute la prédiction YOLO pour les plantes."""
-    models = get_models()
-    model = models.get('plant')
-    if not model:
-        return "Inconnu", "Indéterminé", "Service IA indisponible", {}
-
-    results = model(image_path)
-    
-    disease = "Sain"
-    severity = "Faible"
-    advice = "Aucun traitement nécessaire"
-    detection_details = {"label": "Sain", "confidence": 1.0, "boxes": []}
-
-    if len(results) > 0 and len(results[0].boxes) > 0:
-        # Récupérer la détection la plus fiable
-        best_box = results[0].boxes[0]
-        class_id = int(best_box.cls[0].item())
-        disease = results[0].names[class_id]
-        confidence = float(best_box.conf[0].item())
-
-        # Calculer la sévérité
-        if confidence > 0.8: severity = "Haute"
-        elif confidence > 0.5: severity = "Moyenne"
-
-        # Recommandations (mapping simple)
-        advices_map = {
-            "mildiou": "Appliquer un fongicide à base de cuivre",
-            "oidium": "Appliquer du soufre ou un produit systémique",
-            "rouille": "Retirer les feuilles infectées et appliquer un traitement",
-            "sain": "Plante en bonne santé. Continuer la surveillance"
-        }
-        advice = advices_map.get(disease.lower(), f"Analyse requise pour {disease}")
+    if not PLANT_MODEL:
         
-        # Détails complets des boxes
-        boxes = []
-        for box in results[0].boxes:
-            b_class_id = int(box.cls[0].item())
-            boxes.append({
-                "x_min": float(box.xyxy[0][0].item()),
-                "y_min": float(box.xyxy[0][1].item()),
-                "x_max": float(box.xyxy[0][2].item()),
-                "y_max": float(box.xyxy[0][3].item()),
-                "confidence": float(box.conf[0].item()),
-                "label": results[0].names[b_class_id]
-            })
-        
-        detection_details = {
-            "label": disease,
-            "confidence": confidence,
-            "boxes": boxes
-        }
+        return "Inconnu", {"label": "Service IA indisponible"}, [], None
+    
+    nparr = np.frombuffer(image_data, np.uint8)
+    image = cv2.imdecode(nparr, cv2.IMREAD_COLOR) # Décodage ultra-rapide
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    results = PLANT_MODEL(image, conf=0.25)
+    
+    if not results or len(results[0].boxes) == 0:
+        # return "Sain", {"label": "Sain", "confidence": 100.0, "pathologies": []}, [], None
+        return "Inconnu", {"label": "Aucune maladie détectée"}, [], None
 
-    return disease, severity, advice, detection_details
+    result = results[0]
+    original_names = result.names.copy()
+    
+    # --- Mapping pour l'IMAGE (Codes courts) ---
+    short_names_for_plot = {id: SHORT_CODE_MAP.get(name, name) for id, name in original_names.items()}
+    result.names = short_names_for_plot
+    im_array = result.plot() 
+    result.names = original_names
+    # --- Traitement des détections (Traductions et filtrage) ---
+    detections = []
+    for box in result.boxes:
+        cls_id = int(box.cls[0])
+        name_en = original_names[cls_id]
+        name_fr = TRANSLATION_MAP.get(name_en, "Inconnu")
+        detections.append({
+            "name_en": name_en,
+            "name_fr": name_fr,
+            "conf": round(float(box.conf[0]) * 100, 2),
+            "coords": [round(x, 1) for x in box.xyxy[0].tolist()]
+        })
 
-def run_valorisation_prediction(image_path: str):
+    # --- Extraction de la maladie principale (Meilleur box) ---
+    best_det = detections[0]
+    eng_name = best_det["name_en"]
+    disease_fr = best_det["name_fr"]
+    short_code = SHORT_CODE_MAP.get(eng_name, "UNK")
+
+    # --- Liste des pathologies pour le RAG (Uniques et filtrées) ---
+    exclude = ["Tomato leaf", "Bell_pepper leaf", "Blueberry leaf"]
+    pathologies_fr = list(dict.fromkeys([
+        d["name_fr"] for d in detections if d["name_en"] not in exclude
+    ]))
+    
+    # --- Extraction de la culture ---
+    crop_name = "Inconnu"
+    for eng_prefix, fr_crop in CROP_MAP.items():
+        if eng_name.startswith(eng_prefix):
+            crop_name = fr_crop
+            break
+
+    # Sauvegarde physique de l'image annotée
+    image_path = save_diagnostic_image(im_array)
+
+    detection_details = {
+        "short_code": short_code,        
+        "full_name_en": eng_name,
+        "label": disease_fr,
+        "culture": crop_name,
+        "confidence": best_det["conf"],
+        "pathologies": pathologies_fr,
+        "boxes": [
+            {
+                "coords": d["coords"],
+                "label": d["name_fr"]
+            } for d in detections
+        ]
+    }
+    print("image_path",image_path)
+    # Récupérer le chemin actuel pour le log MLflow
+    current_model_path = os.getenv("PLANT_MODEL_PATH", "Inconnu")
+
+    # Logging MLflow via utilitaire
+    # track_diagnostic(
+    #    run_name="Plant_Diagnostic",
+    #    model_type="YOLO_Plant",
+    #    model_path=current_model_path,
+    #    metrics={"confidence": best_det["conf"]},
+    #    params={"disease_detected": disease_fr, "crop": crop_name},
+    #    image_path=image_path
+    #)
+
+    return disease_fr, detection_details, pathologies_fr ,image_path
+
+async def get_rag_ordonnance(pathologies: list, culture: str = None):
+    """
+    Récupère les recommandations RAG en incluant la culture pour plus de précision.
+    """
+    from src.api.v1.services import rag_service
+    return await rag_service.get_ordonnance(pathologies, culture)
+
+
+def run_valorisation_prediction(image_data: bytes):
     """Exécute la prédiction YOLO pour le contrôle qualité (Valorisation)."""
-    models = get_models()
-    model = models.get('valorisation')
-    if not model:
-        return {}, 0.5, 0.0, "MECANIQUE", {}
+    
+    if not VALORISATION_MODEL:
+        return {}, 0.0, 0.0, "ERREUR", {"label": "Service IA indisponible"}, None
 
-    results = model(image_path)
+    # Chargement de l'image
+    nparr = np.frombuffer(image_data, np.uint8)
+    image = cv2.imdecode(nparr, cv2.IMREAD_COLOR) # Décodage ultra-rapide
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    results = VALORISATION_MODEL(image, conf=0.25)
     
     visual_defects = {}
     healthy_score = 1.0
     taux_defauts = 0.0
     decision = "DIRECT_EMBALLAGE"
     detection_details = {"label": "Sain", "confidence": 1.0, "boxes": []}
+    image_path = None
 
-    if len(results) > 0 and len(results[0].boxes) > 0:
-        total_items = len(results[0].boxes)
-        defects_count = 0
-        boxes = []
+    if results and len(results[0].boxes) > 0:
+        result = results[0]
         
-        for box in results[0].boxes:
-            class_id = int(box.cls[0].item())
-            label = results[0].names[class_id]
-            conf = float(box.conf[0].item())
+        # 1. Analyser toutes les détections
+        detections = []
+        visual_defects = {}
+        defects_count = 0
+        
+        for box in result.boxes:
+            cls_id = int(box.cls[0])
+            label = result.names[cls_id]
+            conf = round(float(box.conf[0]), 2)
+            coords = [round(x, 1) for x in box.xyxy[0].tolist()]
             
-            boxes.append({
-                "x_min": float(box.xyxy[0][0].item()),
-                "y_min": float(box.xyxy[0][1].item()),
-                "x_max": float(box.xyxy[0][2].item()),
-                "y_max": float(box.xyxy[0][3].item()),
+            detections.append({
+                "label": label,
                 "confidence": conf,
-                "label": label
+                "coords": coords
             })
 
             if label.lower() != "sain":
                 defects_count += 1
                 visual_defects[label] = visual_defects.get(label, 0) + 1
         
+        total_items = len(detections)
         taux_defauts = (defects_count / total_items) if total_items > 0 else 0
         healthy_score = 1.0 - taux_defauts
         
+        # 2. Générer l'image annotée (Plot)
+        im_array = result.plot()
+        image_path = save_diagnostic_image(im_array)
+
         # Décision automatique : si plus de 20% de défauts -> Tri mécanique
         if taux_defauts > 0.2:
             decision = "MECANIQUE"
         
         detection_details = {
             "label": "Mixed" if defects_count > 0 else "Sain",
-            "confidence": 1.0 - taux_defauts,
-            "boxes": boxes
+            "confidence": round(float(1.0 - taux_defauts), 2),
+            "boxes": detections
         }
 
-    return visual_defects, healthy_score, taux_defauts, decision, detection_details
+    # Logging MLflow via utilitaire
+    metrics = {"healthy_score": healthy_score, "taux_defauts": taux_defauts}
+    # Log dynamique des défauts
+    for label, count in visual_defects.items():
+        metrics[f"nb_{label}"] = count
 
-async def analyze_frame(frame_bytes: bytes):
-    """Inférence rapide sur une frame vidéo (bytes)."""
-    nparr = np.frombuffer(frame_bytes, np.uint8)
-    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    
-    models = get_models()
-    model = models.get('plant') # Utilise le modèle plante par défaut pour le streaming
-    if not model:
-        return {"label": "Service IA indisponible", "confidence": 0, "boxes": []}
+    # Récupérer le chemin actuel pour le log MLflow
+    current_model_path = os.getenv("VALORISATION_MODEL_PATH", "Inconnu")
 
-    results = model(img)
-    
-    if len(results) > 0 and len(results[0].boxes) > 0:
-        best_box = results[0].boxes[0]
-        class_id = int(best_box.cls[0].item())
-        
-        boxes = []
-        for box in results[0].boxes:
-            b_class_id = int(box.cls[0].item())
-            boxes.append({
-                "x_min": float(box.xyxy[0][0].item()),
-                "y_min": float(box.xyxy[0][1].item()),
-                "x_max": float(box.xyxy[0][2].item()),
-                "y_max": float(box.xyxy[0][3].item()),
-                "confidence": float(box.conf[0].item()),
-                "label": results[0].names[b_class_id]
-            })
+   # track_diagnostic(
+    #    run_name="Valorisation_Diagnostic",
+     #   model_type="YOLO_Valorisation",
+      #  model_path=current_model_path,
+       # metrics=metrics,
+        #params={"decision": decision},
+        #image_path=image_path
+    #)
 
-        return {
-            "label": results[0].names[class_id],
-            "confidence": float(best_box.conf[0].item()),
-            "boxes": boxes
-        }
+    return visual_defects, healthy_score, taux_defauts, decision, detection_details, image_path
+
+def run_freshness_prediction(image_data: bytes):
+    """
+    Exécute la prédiction YOLO pour classer le produit : Frais (Fresh) ou Pourri (Rotten).
+    Utilise OpenCV pour un prétraitement rapide.
+    """
     
-    return {"label": "Sain", "confidence": 1.0, "boxes": []}
+    if not CONSUMER_MODEL:
+        return "Inconnu", 0.0, {"label": "Service IA indisponible"}, None
+
+   
+    np_arr = np.frombuffer(image_data, np.uint8)
+    image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+    # Inférence YOLO
+   
+    results = CONSUMER_MODEL(image, conf=0.30)
+    
+    if not results or len(results[0].boxes) == 0:
+        return "Indéterminé", 0.0, {"label": "Aucun produit détecté"}, None
+
+    result = results[0]
+   
+    cls_id = int(result.boxes[0].cls[0])
+    label_en = result.names[cls_id] # "Fresh" ou "Rotten"
+    confidence = float(result.boxes[0].conf[0])
+
+    if "fresh" in label_en.lower():
+        freshness_score = round(confidence, 2)
+    else:
+        freshness_score = round(1.0 - confidence, 2)
+
+    # Traduction simple pour le consommateur
+    status_map = {"Fresh": "Frais", "Rotten": "pourri", "fresh": "Frais", "rotten": "pourri"}
+    label_fr = status_map.get(label_en, label_en)
+
+    # 4. Génération de l'image annotée pour le retour visuel client
+    im_array = result.plot()
+    image_path = save_diagnostic_image(im_array)
+
+    detection_details = {
+        "label": label_fr,
+        "confidence": round(confidence, 2),
+        "status_code": "GREEN" if "fresh" in label_en.lower() else "RED",
+        "image_url": image_path,
+        "freshness_score": freshness_score
+    }
+
+    return label_fr, freshness_score, detection_details, image_path
