@@ -64,7 +64,7 @@ async def get_ordonnance_ia(
     if not diag:
         raise HTTPException(status_code=404, detail="Diagnostic introuvable.")
 
-    # 2. Extraire les pathologies (depuis les détails stockés)
+    # 2. Extraire les pathologies 
     pathologies = diag.detection_details.get("pathologies", [])
     if not pathologies:
         # Fallback sur le label principal si pas de liste
@@ -133,20 +133,20 @@ async def diagnose_consumer_product(
     """
     Diagnostic de fraîcheur direct via upload d'image.
     """
-    # 1. Inférence IA (OpenCV + YOLO)
+    
     image_bytes = await file.read()
-    label_fr, confidence, det_details, image_path = diagnostic_service.run_freshness_prediction(image_bytes)
+    label_fr, freshness_score, det_details, image_path = diagnostic_service.run_freshness_prediction(image_bytes)
 
-    # 2. Préparation du schéma de création
+    
     diag_data = ConsumerDiagnosticCreate(
         user_id=user.id,
         image_url=image_path,
-        freshness_score=confidence,
+        freshness_score=freshness_score,
         is_edible=(label_fr == "Frais"),
         detection_details=det_details
     )
 
-    # 3. Appel du CRUD pour sauvegarde (sans QR code)
+    
     return diagnostic_crud.create_consumer_diagnostic(db, diag_data)
 @router.get("/history", response_model=DiagnosticListResponse)
 def get_history(

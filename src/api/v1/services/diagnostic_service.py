@@ -220,14 +220,15 @@ def run_freshness_prediction(image_data: bytes):
    
     cls_id = int(result.boxes[0].cls[0])
     label_en = result.names[cls_id] # "Fresh" ou "Rotten"
-    confidence = round(float(result.boxes[0].conf[0]), 2)
+    confidence = float(result.boxes[0].conf[0])
+
+    if "fresh" in label_en.lower():
+        freshness_score = round(confidence, 2)
+    else:
+        freshness_score = round(1.0 - confidence, 2)
 
     # Traduction simple pour le consommateur
-    status_map = {
-        "Fresh": "Frais",
-        "Rotten": "pourri",
-        
-    }
+    status_map = {"Fresh": "Frais", "Rotten": "pourri", "fresh": "Frais", "rotten": "pourri"}
     label_fr = status_map.get(label_en, label_en)
 
     # 4. Génération de l'image annotée pour le retour visuel client
@@ -236,9 +237,10 @@ def run_freshness_prediction(image_data: bytes):
 
     detection_details = {
         "label": label_fr,
-        "confidence": confidence,
-        "status_code": "GREEN" if label_en == "Fresh" else "RED",
-        "image_url": image_path
+        "confidence": round(confidence, 2),
+        "status_code": "GREEN" if "fresh" in label_en.lower() else "RED",
+        "image_url": image_path,
+        "freshness_score": freshness_score
     }
 
-    return label_fr, confidence, detection_details, image_path
+    return label_fr, freshness_score, detection_details, image_path
