@@ -19,11 +19,8 @@ mlflow
 langchain
 langchain-community 
 langchain-core
-langchain-classic 
-pypdf
+pdfplumber
 langchain-text-splitters
 langchain-huggingface 
-langchain-chroma
-chromadb
 sentence-transformers
 langchain-groq
