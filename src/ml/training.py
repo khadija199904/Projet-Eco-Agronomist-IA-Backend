@@ -1,4 +1,4 @@
-import mlflow
+
 import os
 import torch
 from ultralytics import YOLO, RTDETR
@@ -7,87 +7,80 @@ import yaml
 from dotenv import load_dotenv
 import glob
 
-# Removed: from src.data.kaggle_loader import download_kaggle_dataset
-from .tracking import setup_mlflow
+
+
 
 load_dotenv()
 
 # --- Dataset Setup  ---
 def setup_dataset(dataset_name_dir):
     """
-    Prepares the dataset by using a local folder and generating its YAML configuration.
-    
-    Args:
-        base_data_dir (str): The base directory where all local datasets are stored (e.g., 'data').
-        dataset_name_sub_dir (str): The name of the subdirectory for the specific dataset
-                                    (e.g., 'agrivision-plant-disease').
+    Prépare le dataset et synchronise le fichier nettoyé s'il existe.
     """
-    
+    # 1. Chemins de base
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
     dataset_root = os.path.join(project_root, "data", "silver", dataset_name_dir)
-    
-    if not os.path.exists(dataset_root):
-        raise FileNotFoundError(f"local dataset not found at {dataset_root}. please ensure your dataset is placed there.")
+    config_dir = os.path.join(project_root, "src/ml/configml")
+    os.makedirs(config_dir, exist_ok=True)
 
+    if not os.path.exists(dataset_root):
+        raise FileNotFoundError(f"Dataset non trouvé : {dataset_root}")
+
+    # 2. Définition des fichiers cibles dans configml
+    fixed_yaml_name = f"{dataset_name_dir.replace('-', '_')}_fixed.yaml"
+    cleaned_yaml_name = f"{dataset_name_dir.replace('-', '_')}_fixed_cleaned.yaml"
     
+    target_fixed_path = os.path.join(config_dir, fixed_yaml_name)
+    target_cleaned_path = os.path.join(config_dir, cleaned_yaml_name)
+
+    # 3. VERIFICATION
+    source_cleaned = os.path.join(dataset_root, "data_cleaned.yaml")
+
+    if os.path.exists(source_cleaned):
+        print(f"✨ Fichier nettoyé détecté dans les données : {source_cleaned}")
+        with open(source_cleaned, 'r') as f:
+            clean_config = yaml.safe_load(f)
+        
+        # On force la mise à jour du chemin pour Ultralytics
+        clean_config['path'] = dataset_root
+        
+        # On le sauvegarde proprement dans configml
+        with open(target_cleaned_path, 'w') as f:
+            yaml.dump(clean_config, f, default_flow_style=False)
+            
+        print(f"✅ Dataset NETTOYÉ synchronisé : {target_cleaned_path}")
+        return target_cleaned_path
+
+    # 4. Si pas de nettoyé, on crée le fichier 'fixed' standard
     original_yaml_path = os.path.join(dataset_root, "data.yaml")
     if not os.path.exists(original_yaml_path):
         yaml_files = glob.glob(os.path.join(dataset_root, "**", "data.yaml"), recursive=True)
-        if yaml_files:
-            original_yaml_path = yaml_files[0]
-            
-            print(f"found data.yaml in subdirectory: {original_yaml_path}")
-        else:
-            raise FileNotFoundError(f"data.yaml or dataset.yaml not found for {dataset_name_dir} in {dataset_root}")
+        original_yaml_path = yaml_files[0] if yaml_files else None
+
+    if not original_yaml_path:
+        raise FileNotFoundError(f"Aucun data.yaml trouvé pour {dataset_name_dir}")
 
     with open(original_yaml_path, 'r') as f:
         config = yaml.safe_load(f)
 
+    # Reconstruction de la config pour Ultralytics
+    new_config = {
+        'path': dataset_root,
+        'train': os.path.relpath(os.path.join(dataset_root, config.get('train', 'train/images')), dataset_root),
+        'val': os.path.relpath(os.path.join(dataset_root, config.get('val', config.get('valid', 'val/images'))), dataset_root),
+        'test': os.path.relpath(os.path.join(dataset_root, config.get('test', 'test/images')), dataset_root)
+    }
     
-    new_config = {}
-    new_config['path'] = dataset_root # This sets the base path for ultralytics
-    
-    # Extract and normalize 'train', 'val', 'test' paths to be relative to the dataset_root
-    # Ultralytics expects these to be relative to the 'path' entry.
-    
-    # Handle 'train'
-    if 'train' in config:
-        new_config['train'] = os.path.relpath(os.path.join(dataset_root, config['train']), dataset_root)
-    else:
-        new_config['train'] = 'train/images' # Default if not specified
-
-    # Handle 'val' or 'valid' for validation set
-    if 'val' in config:
-        new_config['val'] = os.path.relpath(os.path.join(dataset_root, config['val']), dataset_root)
-    elif 'valid' in config:
-        new_config['val'] = os.path.relpath(os.path.join(dataset_root, config['valid']), dataset_root)
-    else:
-        new_config['val'] = 'val/images' # Default if neither specified
-
-    # Handle 'test'
-    if 'test' in config:
-        new_config['test'] = os.path.relpath(os.path.join(dataset_root, config['test']), dataset_root)
-    else:
-        # Default if not specified, you might want to adjust this if your dataset doesn't have a test set
-        new_config['test'] = 'test/images' 
-
-    # Copy other non-path related keys (like names, nc)
+    # Copie des noms et nombre de classes
     for key, value in config.items():
         if key not in ['path', 'train', 'val', 'valid', 'test']:
             new_config[key] = value
 
-    config_dir = os.path.join(project_root, "src/ml/configml")
-    os.makedirs(config_dir, exist_ok=True)
-    
-    
-    new_yaml_filename = f"{dataset_name_dir.replace('-', '_')}_fixed.yaml"
-    new_yaml_path = os.path.join(config_dir, new_yaml_filename)
-
-    with open(new_yaml_path, 'w') as f:
+    with open(target_fixed_path, 'w') as f:
         yaml.dump(new_config, f, default_flow_style=False)
 
-    print(f"new config file created: {new_yaml_path}")
-    return new_yaml_path
+    print(f" Nouveau fichier config créé (Standard) : {target_fixed_path}")
+    return target_fixed_path
 
 
 
@@ -115,6 +108,10 @@ def train_eco_agronomist(pole="PRODUCTION", algo="YOLO", epochs=50):
     elif pole == "VALORISATION":
         project_name = "Val_Anomalies"
         data_yaml_path = setup_dataset(dataset_2_sub_dir) 
+        cleaned_path = data_yaml_path.replace(".yaml", "_cleaned.yaml")
+        if os.path.exists(cleaned_path):
+           data_yaml_path = cleaned_path
+           print(f"--- MODE NETTOYAGE ACTIVÉ : {data_yaml_path} ---")
         imgsz = 640
         model_path = 'yolo26n.pt' 
         if algo == "RTDETR":
@@ -141,7 +138,8 @@ def train_eco_agronomist(pole="PRODUCTION", algo="YOLO", epochs=50):
         optimizer = 'AdamW'
         lr0 = 0.0005  
         warmup_epochs = 3 
-       
+        weight_decay = 0.0005 
+        
     else:
         optimizer = 'auto'
         lr0 = 0.01
@@ -154,7 +152,7 @@ def train_eco_agronomist(pole="PRODUCTION", algo="YOLO", epochs=50):
                     epochs=epochs,
                     imgsz=imgsz,
                     batch=-1,
-                    name=f"{project_name}_{algo}_Opti",
+                    name=f"{project_name}_{algo}_Optim",
                     project="./results",
                     device=0, # GPU NVIDIA local (lightning.ai)
                     optimizer=optimizer,
@@ -196,29 +194,29 @@ if __name__ == "__main__":
        print("CUDA toujours indisponible. Vérifiez l'installation.")
     
     # Test : Pôle Production avec YOLO 
-    # train_eco_agronomist(
-    #     pole="PRODUCTION", 
-    #     algo="YOLO", 
-    #     epochs=100
-    # )
+    train_eco_agronomist(
+         pole="PRODUCTION", 
+         algo="YOLO", 
+        epochs=100
+     )
 
     # You can uncomment and test other configurations if needed
     # Test 1 : Pôle Production avec RT-DETR (Le plus moderne)
-   # train_eco_agronomist(
-   #      pole="PRODUCTION", 
-   #      algo="RTDETR", 
-    #     epochs=30
+    # train_eco_agronomist(
+    #     pole="PRODUCTION", 
+    #     algo="RTDETR", 
+    #     epochs=50
     # )
      # # Test 2 : Pôle Valorisation avec YOLO Nano (Le plus rapide pour PWA)
-    train_eco_agronomist(
-        pole="VALORISATION", 
-      algo="YOLO", 
-      epochs=100
-    )
+    # train_eco_agronomist(
+    #   pole="VALORISATION", 
+    #  algo="YOLO", 
+    #  epochs=100
+    # )
 
     # # Test 2 : Pôle Valorisation avec YOLO Nano (Le plus rapide pour PWA)
-    # train_eco_agronomist(
+    #train_eco_agronomist(
      #   pole="CONSOMMATION", 
      #   algo="YOLO", 
-     #   epochs=100
-    # )
+      #  epochs=100
+     #)
