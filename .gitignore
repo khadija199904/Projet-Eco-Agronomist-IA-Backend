@@ -21,6 +21,8 @@ mlruns/
 mlflow.db
 .github/
 
+
+src/ai/ml/configml/
 uploads/
 mlruns/
 mlflow.db/
