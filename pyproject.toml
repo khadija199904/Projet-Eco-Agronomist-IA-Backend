@@ -58,6 +58,11 @@ explicit = true
 torch = { index = "pytorch-cpu" }
 torchvision = { index = "pytorch-cpu" }
 
+[dependency-groups]
+dev = [
+    "ruff>=0.15.7",
+]
+
 [tool.uv]
 # Optionnel : aide à la résolution sur Linux
 environments = ["sys_platform == 'linux'"]
