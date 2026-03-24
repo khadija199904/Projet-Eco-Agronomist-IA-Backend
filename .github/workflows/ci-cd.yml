@@ -7,7 +7,7 @@ on:
 
 jobs:
   test-and-lint:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     env:
       UV_CACHE_DIR: /tmp/.uv-cache
     steps:
