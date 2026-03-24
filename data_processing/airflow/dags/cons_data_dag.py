@@ -1,5 +1,4 @@
 from airflow import DAG
-from airflow.datasets import Dataset
 from datetime import datetime
 import os
 import sys
@@ -10,8 +9,7 @@ if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
     
 
-
-from tasks.kaggle_uploader import export_to_kaggle
+from tasks.kaggle_uploader import export_to_kaggle # noqa: E402
 
 with DAG(
     dag_id='export_consumer_dataset_to_kaggle',

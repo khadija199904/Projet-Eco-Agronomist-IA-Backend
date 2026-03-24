@@ -1,6 +1,5 @@
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, Boolean, JSON, Enum
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
 from src.database.database import Base
 from src.database.models.enums import DiagnosticType
 import datetime

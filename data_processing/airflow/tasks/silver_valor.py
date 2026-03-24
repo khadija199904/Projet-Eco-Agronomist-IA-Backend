@@ -20,13 +20,13 @@ def valorisation_fusion():
         'Papaya ring spot'
     ]
 
-    # 2. Tomato (All classes, prefix with tomate_)
+    # 2. Tomate
     TOMATE_DS = os.path.join(STATION_DIR, "Tomate")
 
-    # 3. Pepper Anthracnose (Only anthracnose, rename to pepper_anthracnose)
+    # 3. Pepper Anthracnose 
     PEPPER_ANTH_DS = os.path.join(STATION_DIR, "pepper-anthracnose")
 
-    # 4. Tomato Blossom (Only blossom end rot )
+    # 4. Tomato Blossom 
     TOMATO_BLOSSOM_DS = os.path.join(STATION_DIR, "tomato-blossom-end-rot.v1i.yolov11")
 
     final_names = []
@@ -34,7 +34,7 @@ def valorisation_fusion():
 
     curr_idx = 0
 
-    # Helper to add dataset to mapping
+    
     def add_dataset(path, prefix, filter_fn=None, rename_fn=None):
         nonlocal curr_idx
         with open(os.path.join(path, "data.yaml"), 'r') as f:
@@ -113,7 +113,8 @@ def valorisation_fusion():
                     
                     for line in lines:
                         parts = line.strip().split()
-                        if not parts: continue
+                        if not parts: 
+                            continue
                         old_id = parts[0]
                         if old_id in mapping:
                             parts[0] = mapping[old_id]
@@ -166,7 +167,7 @@ This dataset is a collection of images and labels from multiple sources, curated
 
     print(f"Fusion completed in {SILVER_DIR}.")
     print(f"Total classes: {len(final_names)}")
-    print(f"README.md created with the 3 main data sources.")
+    print("README.md created with the 3 main data sources.")
 
 if __name__ == "__main__":
     valorisation_fusion()

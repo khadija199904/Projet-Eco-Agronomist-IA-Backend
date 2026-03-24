@@ -1,6 +1,6 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
-from datetime import datetime, timedelta
+from datetime import datetime
 import sys
 import os
 
@@ -8,8 +8,8 @@ ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
-from tasks.kaggle_uploader import export_to_kaggle
-from tasks.silver_valor import valorisation_fusion
+from tasks.kaggle_uploader import export_to_kaggle # noqa: E402
+from tasks.silver_valor import valorisation_fusion # noqa: E402
 
 with DAG(
     'data_valorisation_pipeline',

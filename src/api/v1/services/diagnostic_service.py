@@ -2,7 +2,6 @@ import os
 import cv2
 import numpy as np
 from src.core.mapping import TRANSLATION_MAP, SHORT_CODE_MAP, CROP_MAP
-from src.core.config import PLANT_MODEL_PATH, VALORISATION_MODEL_PATH , CONSUMER_MODEL_PATH
 from src.api.v1.utils.model_loader import get_models
 from src.api.v1.utils.save_diagnostic import save_diagnostic_image
 from src.api.v1.utils.mlflow_utils import track_diagnostic

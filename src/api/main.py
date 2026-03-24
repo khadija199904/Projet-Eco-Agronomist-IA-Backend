@@ -5,7 +5,6 @@ from src.api.v1 import routers
 from src.api.v1.middleware.cors import setup_cors
 from src.core.config import settings
 from fastapi.staticfiles import StaticFiles
-import os
 
 app = FastAPI(
     title=settings.PROJECT_NAME,

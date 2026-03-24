@@ -37,7 +37,8 @@ def standardize_roboflow():
             continue
 
         img_dir = os.path.join(src_split_path, "images")
-        if not os.path.exists(img_dir):          continue
+        if not os.path.exists(img_dir):    
+            continue
         
         files = [f for f in os.listdir(img_dir) if f.lower().endswith(('.jpg', '.jpeg', '.png'))]
         

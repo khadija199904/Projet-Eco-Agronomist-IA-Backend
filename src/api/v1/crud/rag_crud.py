@@ -1,8 +1,5 @@
 from sqlalchemy.orm import Session
-from src.database.models.diagnostics_table import UniversalDiagnostic
 from src.database.models.ordonnacesIA import TreatmentRAG
-from src.database.models.enums import DiagnosticType
-from src.api.v1.schemas.diagnostic_schema import PlantDiagnosticCreate, TreatmentRAGCreate, ProductDiagnosticCreate
 
 
 def create_treatment_rag(db: Session, diagnostic_id: int, nom_maladie: str, ordonnance: str, sources: str = None):

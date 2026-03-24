@@ -9,7 +9,7 @@ def export_to_kaggle(local_dir, dataset_slug, dataset_title, version_notes="Upda
     Exporte un dossier local vers Kaggle. 
     Gère la création initiale et la mise à jour des versions.
     """
-    # Configuration du logger pour Airflow
+    
     logger = logging.getLogger("airflow.task")
     
     api = KaggleApi()
@@ -57,7 +57,7 @@ def export_to_kaggle(local_dir, dataset_slug, dataset_title, version_notes="Upda
         logger.info(f"--- SUCCESS: {dataset_title} est en ligne ! ---")
 
     except Exception as e:
-        logger.error(f"--- FAILED: Export impossible ---")
+        logger.error("--- FAILED: Export impossible ---")
         logger.error(f"Détails de l'erreur : {str(e)}")
         raise e
 

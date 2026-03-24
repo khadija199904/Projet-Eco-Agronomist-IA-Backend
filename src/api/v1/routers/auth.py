@@ -1,13 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from src.api.v1.schemas.user_schema import UserCreate, UserResponse, UserUpdate, UserOut, Token
+from src.api.v1.schemas.user_schema import UserCreate, UserResponse, UserUpdate, Token
 from src.database.models import User
 from src.api.v1.crud.user_crud import create_user, update_user
 from src.core.security import verify_password_hash, create_access_token
 from src.api.v1.dependencies.db import get_db
 from src.api.v1.dependencies.user import get_current_user
 from fastapi.security import OAuth2PasswordRequestForm
-from src.database.models.organization_table import Organization
 from src.database.models.enums import UserRole
 
 router = APIRouter()

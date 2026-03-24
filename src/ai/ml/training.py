@@ -147,7 +147,7 @@ def train_eco_agronomist(pole="PRODUCTION", algo="YOLO", epochs=50):
         weight_decay = 0.0005 
       
  
-    results = model.train(
+    model.train(
                     data=data_yaml_path, 
                     epochs=epochs,
                     imgsz=imgsz,

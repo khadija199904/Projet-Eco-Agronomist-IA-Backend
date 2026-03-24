@@ -1,5 +1,4 @@
 import shutil
-import os
 from pathlib import Path
 from ultralytics import YOLO, RTDETR
 
@@ -15,7 +14,7 @@ def save_and_export_ml_artifacts(
     artifact_name: str, 
     model_type: str = "YOLO",
     version: str = "v1",
-    base_results_dir: str = ".", # Cherche partout dans le projet
+    base_results_dir: str = ".", 
     destination_dir: str = "artifacts/models_saved"
 ):
     """
@@ -38,7 +37,7 @@ def save_and_export_ml_artifacts(
     shutil.copy(source_pt, dest_pt)
     print(f" PyTorch sauvegardé : {dest_pt}")
 
-    print(f" Conversion ONNX optimisée pour PWA (Web/Mobile)...")
+    print(" Conversion ONNX optimisée pour PWA (Web/Mobile)...")
     try:
         model_loader = RTDETR if model_type == "RTDETR" else YOLO
         model = model_loader(str(dest_pt))

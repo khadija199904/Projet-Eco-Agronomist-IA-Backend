@@ -45,12 +45,14 @@ SILVER_DIR = "/opt/airflow/data/silver/detection_maladies_plantes"
 # --- 2. LOGIQUE DE FILTRAGE ET RÉINDEXATION (UDF) ---
 
 def filter_and_reindex_udf(content, source):
-    if not content: return None
+    if not content: 
+        return None
     lines = content.strip().split('\n')
     valid_lines = []
     for line in lines:
         parts = line.split()
-        if not parts: continue
+        if not parts: 
+            continue
         old_id = parts[0]
         new_id = KAG_TO_SILVER.get(old_id) if source == "kaggle" else ROBO_TO_SILVER.get(old_id)
         if new_id:
@@ -77,7 +79,8 @@ def copy_files_to_silver(partition):
 
 def process_silver():
     
-    if os.path.exists(SILVER_DIR): shutil.rmtree(SILVER_DIR)
+    if os.path.exists(SILVER_DIR):
+        shutil.rmtree(SILVER_DIR)
     for s in ['train', 'val']:
         for d in ['images', 'labels']:
             os.makedirs(f"{SILVER_DIR}/{s}/{d}", exist_ok=True)

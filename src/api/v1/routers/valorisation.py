@@ -11,7 +11,7 @@ from src.api.v1.schemas.diagnostic_schema import (
     ProductDiagnosticCreate
 )
 from src.api.v1.schemas.valorisation_schema import (
-    TraitementStationCreate, TraitementStationResponse, 
+    TraitementStationResponse, 
     QualiteCheckResult, LotQualityReport, TraitementStationUpdate,
     ReceptionStationCreate, ReceptionStationResponse
 )

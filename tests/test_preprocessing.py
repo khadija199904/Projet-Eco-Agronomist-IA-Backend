@@ -1,4 +1,3 @@
-import pytest
 from data_processing.rag_ingest import split_fiches
 
 def test_split_fiches_simple():

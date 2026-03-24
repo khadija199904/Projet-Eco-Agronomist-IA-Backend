@@ -67,7 +67,6 @@ async def get_ordonnance_ia(
     # 2. Extraire les pathologies 
     pathologies = diag.detection_details.get("pathologies", [])
     if not pathologies:
-        # Fallback sur le label principal si pas de liste
         pathologies = [diag.disease_detected] if diag.disease_detected else []
 
     try:
@@ -95,7 +94,7 @@ async def valorize_product(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user)
 ):
-    # Sécurité : Rôle Qualité ou Admin
+    
     if user.role not in [UserRole.QUALITE, UserRole.ADMIN]:
         raise HTTPException(status_code=403, detail="Réservé aux contrôleurs qualité.")
     
@@ -108,7 +107,7 @@ async def valorize_product(
     if not lot:
         raise HTTPException(status_code=404, detail="Lot de récolte introuvable.")
 
-    # Lecture des bytes
+    
     image_bytes = await file.read()
     defects, score, taux, decision, detection_details, annotated_path = diagnostic_service.run_valorisation_prediction(image_bytes)
     

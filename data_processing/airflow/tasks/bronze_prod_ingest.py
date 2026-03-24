@@ -22,7 +22,7 @@ def ingest_dataset():
     
     api.dataset_download_files(dataset_id, path=bronze_path, unzip=True)
 
-    print(f"Ingestion depuis kaggle terminée")
+    print("Ingestion depuis kaggle terminée")
      
      #---------------Roboflow-------------------------
     RAW_ROBO = "/opt/airflow/data/raw/roboflow_standardized"
@@ -40,7 +40,7 @@ def ingest_dataset():
     
     shutil.copytree(RAW_ROBO, BRONZE_ROBO)
     print(f"Données Roboflow copiées avec succès vers {BRONZE_ROBO}")
-    print(f"Ingestion Bronze Totale terminée.")
+    print("Ingestion Bronze Totale terminée.")
 
 
 if __name__ == "__main__":
