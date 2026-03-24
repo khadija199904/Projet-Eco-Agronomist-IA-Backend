@@ -15,7 +15,7 @@ mlflow
 
 
 # RAG 
-
+pinecone
 langchain
 langchain-community 
 langchain-core
@@ -24,6 +24,7 @@ langchain-text-splitters
 langchain-huggingface 
 sentence-transformers
 langchain-groq
+
 pytest
 
 
