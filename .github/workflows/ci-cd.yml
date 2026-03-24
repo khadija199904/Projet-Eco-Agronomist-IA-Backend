@@ -33,7 +33,7 @@ jobs:
           
         run: |
           export PYTHONPATH=$PYTHONPATH:.
-          uv run python pytest
+          uv run pytest
           
   build-and-push:
     needs: test-and-lint
