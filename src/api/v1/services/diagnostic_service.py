@@ -86,18 +86,18 @@ def run_plant_prediction(image_data: bytes):
         ]
     }
     print("image_path",image_path)
-    # Récupérer le chemin actuel pour le log MLflow
+    
     current_model_path = os.getenv("PLANT_MODEL_PATH", "Inconnu")
 
     # Logging MLflow via utilitaire
-    # track_diagnostic(
-    #    run_name="Plant_Diagnostic",
-    #    model_type="YOLO_Plant",
-    #    model_path=current_model_path,
-    #    metrics={"confidence": best_det["conf"]},
-    #    params={"disease_detected": disease_fr, "crop": crop_name},
-    #    image_path=image_path
-    #)
+    track_diagnostic(
+       run_name="Plant_Diagnostic",
+       model_type="YOLO_Plant",
+       model_path=current_model_path,
+       metrics={"confidence": best_det["conf"]},
+       params={"disease_detected": disease_fr, "crop": crop_name},
+       image_path=image_path
+    )
 
     return disease_fr, detection_details, pathologies_fr ,image_path
 
@@ -170,7 +170,7 @@ def run_valorisation_prediction(image_data: bytes):
             "boxes": detections
         }
 
-    # Logging MLflow via utilitaire
+    # Logging MLflow 
     metrics = {"healthy_score": healthy_score, "taux_defauts": taux_defauts}
     # Log dynamique des défauts
     for label, count in visual_defects.items():
@@ -179,14 +179,14 @@ def run_valorisation_prediction(image_data: bytes):
     # Récupérer le chemin actuel pour le log MLflow
     current_model_path = os.getenv("VALORISATION_MODEL_PATH", "Inconnu")
 
-   # track_diagnostic(
-    #    run_name="Valorisation_Diagnostic",
-     #   model_type="YOLO_Valorisation",
-      #  model_path=current_model_path,
-       # metrics=metrics,
-        #params={"decision": decision},
-        #image_path=image_path
-    #)
+    track_diagnostic(
+        run_name="Valorisation_Diagnostic",
+        model_type="YOLO_Valorisation",
+        model_path=current_model_path,
+        metrics=metrics,
+            params={"decision": decision},
+            image_path=image_path
+        )
 
     return visual_defects, healthy_score, taux_defauts, decision, detection_details, image_path
 
@@ -237,5 +237,16 @@ def run_freshness_prediction(image_data: bytes):
         "image_url": image_path,
         "freshness_score": freshness_score
     }
+
+    # Logging MLflow via utilitaire
+    current_model_path = os.getenv("CONSUMER_MODEL_PATH", "Inconnu")
+    track_diagnostic(
+        run_name="Consumer_Diagnostic",
+        model_type="YOLO_Consumer",
+        model_path=current_model_path,
+        metrics={"freshness_score": freshness_score, "confidence": round(confidence, 2)},
+        params={"label_fr": label_fr, "status_code": detection_details["status_code"]},
+        image_path=image_path
+    )
 
     return label_fr, freshness_score, detection_details, image_path
