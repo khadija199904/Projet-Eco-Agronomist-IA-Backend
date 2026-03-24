@@ -51,7 +51,7 @@ def save_and_export_ml_artifacts(
         )
         # Déplacer l'ONNX vers le dossier final
         shutil.move(onnx_path, dest_path / f"{artifact_name}.onnx")
-        print(f"🚀 ONNX optimisé prêt pour le déploiement.")
+        print("🚀 ONNX optimisé prêt pour le déploiement.")
     except Exception as e:
         print(f"⚠️ Export ONNX échoué : {e}")
 
