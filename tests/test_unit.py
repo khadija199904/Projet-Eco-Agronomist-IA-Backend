@@ -31,20 +31,20 @@ def test_get_plant_diagnostic_mocked():
 
 
 # --- 2. TEST AVEC MOCK D'UN SERVICE IA ---
-
+@pytest.mark.anyio
 @patch("src.api.v1.services.rag_service.ask_onssa")
-def test_rag_service_simple_mock(mock_ask):
+async def test_rag_service_simple_mock(mock_ask):
     """
     Test qui simule l'appel au moteur RAG.
     On ne veut pas appeler l'IA (Groq/Pinecone) pendant les tests.
     """
-    from src.api.v1.services.rag_service import generate_treatment_suggestion
+    from src.api.v1.services.rag_service import get_ordonnance
     
     # On définit ce que l'IA est censée répondre
-    mock_ask.return_value = "Voici une ordonnance de test."
+    mock_ask.return_value = {"answer": "Voici une ordonnance de test."}
     
     # On appelle notre service
-    result = generate_treatment_suggestion("Ma plante a des taches", "Tomate")
+    result = await get_ordonnance(["Ma plante a des taches"], "Tomate")
     
     # On vérifie que le résultat est bien celui du mock
     assert "ordonnance de test" in result

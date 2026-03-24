@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from datetime import datetime
 
@@ -14,11 +14,10 @@ class TraitementStationCreate(TraitementStationBase):
     date_agreage: Optional[datetime] = None
 
 class TraitementStationResponse(TraitementStationBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     date_agreage: datetime
-
-    class Config:
-        from_attributes = True
 
 class TraitementStationUpdate(BaseModel):
     besoin_tri_mecanique: Optional[bool] = None
@@ -53,9 +52,8 @@ class ReceptionStationCreate(ReceptionStationBase):
     pass
 
 class ReceptionStationResponse(ReceptionStationBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     date_reception: datetime
     receptionnaire_id: int
-
-    class Config:
-        from_attributes = True
