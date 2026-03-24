@@ -27,13 +27,13 @@ jobs:
       - name: Linting avec Ruff
         run: uv run ruff check .
 
-      # - name: Exécution des tests Pytest
-      #   env:
-      #     DATABASE_URL: "sqlite:///:memory:"
+      - name: Exécution des tests Pytest
+        env:
+          DATABASE_URL: "sqlite:///:memory:"
           
-      #   run: |
-      #     export PYTHONPATH=$PYTHONPATH:.
-      #     uv run pytest
+        run: |
+          export PYTHONPATH=$PYTHONPATH:.
+          uv run python pytest
           
   build-and-push:
     needs: test-and-lint
