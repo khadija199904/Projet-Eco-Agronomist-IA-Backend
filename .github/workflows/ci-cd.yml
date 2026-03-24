@@ -1,5 +1,4 @@
-name: HR-PULSE Backend CI-CD
-
+name: Eco Agronomist Backend CI-CD
 on:
   push:
     branches: [ main, develop ]
@@ -26,9 +25,8 @@ jobs:
 
       - name: Linting avec Ruff
       
-        run: |
-          uv pip install ruff  
-          uv run ruff check .
+        run: uv run ruff check .
+
       - name: Exécution des tests Pytest
         env:
           DATABASE_URL: "sqlite:///:memory:"
