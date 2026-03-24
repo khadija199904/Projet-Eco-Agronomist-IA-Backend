@@ -16,9 +16,9 @@ class Settings:
     ALLOWED_HOSTS: list = ["*"]
 
     # Paths & Models
-    PLANT_MODEL_PATH: str = os.getenv("PLANT_MODEL_PATH", "artifacts/plants/maladies_plant5_v1.pt")
+    PLANT_MODEL_PATH: str = os.getenv("PLANT_MODEL_PATH", "artifacts/plants/V1/maladies_plant5_v1.pt")
     VALORISATION_MODEL_PATH: str = os.getenv("VALORISATION_MODEL_PATH", "artifacts/products/agrivision_anomaly_s_v1/agrivision_anomaly_s.pt")
-    CONSUMER_MODEL_PATH: str = os.getenv("CONSUMER_MODEL_PATH", "artifacts/products/agrivision_consumer_last2_v1/agrivision_consumer_last2.pt")
+    CONSUMER_MODEL_PATH: str = os.getenv("CONSUMER_MODEL_PATH", "artifacts/consom/agrivision_consumer_last2_v1/agrivision_consumer_last2.pt")
     UPLOAD_DIR: str = "uploads/diagnostics"
     
     ONSSA_PDF1_PATH: str | None = os.getenv("ONSSA_PDF1_PATH")
