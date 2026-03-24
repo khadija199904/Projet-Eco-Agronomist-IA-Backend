@@ -164,6 +164,7 @@ services:
     volumes:
       - ../Projet-Eco-Agronomist-IA-Frontend/app-ergonomie:/app
       - /app/node_modules
+      - /app/.next
     networks:
       - eco_network
 
