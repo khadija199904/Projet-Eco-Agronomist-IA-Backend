@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from datetime import datetime
 
@@ -14,11 +14,10 @@ class TraitementStationCreate(TraitementStationBase):
     date_agreage: Optional[datetime] = None
 
 class TraitementStationResponse(TraitementStationBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     date_agreage: datetime
-
-    class Config:
-        from_attributes = True
 
 class TraitementStationUpdate(BaseModel):
     besoin_tri_mecanique: Optional[bool] = None
@@ -41,3 +40,20 @@ class LotQualityReport(BaseModel):
     decision_finale: Optional[str] = None
     is_finalized: bool = False
     date_rapport: datetime
+
+
+# --- RECEPTION STATION ---
+class ReceptionStationBase(BaseModel):
+    lot_recolte_id: int
+    poids_reception: float
+    etat_initial: str
+
+class ReceptionStationCreate(ReceptionStationBase):
+    pass
+
+class ReceptionStationResponse(ReceptionStationBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    date_reception: datetime
+    receptionnaire_id: int

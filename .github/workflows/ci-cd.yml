@@ -1,5 +1,4 @@
-name: HR-PULSE Backend CI-CD
-
+name: Eco Agronomist Backend CI-CD
 on:
   push:
     branches: [ main, develop ]
@@ -15,7 +14,7 @@ jobs:
       - name: Checkout du code
         uses: actions/checkout@v4
 
-     
+      
       - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
@@ -25,15 +24,16 @@ jobs:
         run: uv sync --frozen
 
       - name: Linting avec Ruff
+      
         run: uv run ruff check .
 
-      # - name: Exécution des tests Pytest
-      #   env:
-      #     DATABASE_URL: "sqlite:///:memory:"
+      - name: Exécution des tests Pytest
+        env:
+          DATABASE_URL: "sqlite:///:memory:"
           
-      #   run: |
-      #     export PYTHONPATH=$PYTHONPATH:.
-      #     uv run pytest
+        run: |
+          export PYTHONPATH=$PYTHONPATH:.
+          uv run python pytest
           
   build-and-push:
     needs: test-and-lint

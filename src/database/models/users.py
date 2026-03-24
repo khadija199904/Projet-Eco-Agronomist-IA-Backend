@@ -32,7 +32,7 @@ class User(Base):
     
 
     # --- RELATIONSHIPS ---
-    diagnostics = relationship("ConsumerDiagnostic", back_populates="user")
+    diagnostics = relationship("UniversalDiagnostic", back_populates="user")
 
     __mapper_args__ = {
         "polymorphic_on": role,

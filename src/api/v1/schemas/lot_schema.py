@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from datetime import datetime
 
@@ -13,11 +13,18 @@ class LotRecolteBase(BaseModel):
 class LotRecolteCreate(LotRecolteBase):
     pass 
 
+class LotRecolteUpdate(BaseModel):
+    num_BL: Optional[str] = None
+    produit_nom: Optional[str] = None
+    poids_brut: Optional[float] = None
+    poids_net: Optional[float] = None
+    nombre_unit_transport: Optional[int] = None
+    ferme_id: Optional[int] = None
+
 class LotRecolteResponse(LotRecolteBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     code_qr_initial: str
     date_recolte: datetime
     agriculteur_id: int
-
-    class Config:
-        from_attributes = True 

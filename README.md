@@ -1,5 +1,19 @@
 # 🌱 Eco Agronomist IA - Backend
 
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)
+![Pydantic](https://img.shields.io/badge/Pydantic-E92063?style=for-the-badge&logo=pydantic&logoColor=white)
+![uv](https://img.shields.io/badge/uv-de5b43?style=for-the-badge&logo=python&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
+![Pinecone](https://img.shields.io/badge/Pinecone-0077B6?style=for-the-badge&logo=pinecone&logoColor=white)
+![HuggingFace](https://img.shields.io/badge/HuggingFace-FFC700?style=for-the-badge&logo=huggingface&logoColor=black)
+![MLflow](https://img.shields.io/badge/MLflow-000000?style=for-the-badge&logo=mlflow&logoColor=white)
+![YOLOv8](https://img.shields.io/badge/YOLOv8-00A9E0?style=for-the-badge&logo=ultralytics&logoColor=white)
+![Apache Airflow](https://img.shields.io/badge/Apache%20Airflow-017CEE?style=for-the-badge&logo=Apache%20Airflow&logoColor=white)
+![Apache Spark](https://img.shields.io/badge/Apache%20Spark-E25A2A?style=for-the-badge&logo=apachespark&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white)
+
 Plateforme intelligente de diagnostic phytosanitaire, valorisation post-récolte et traçabilité agricole pour les cultures d'Agadir.
 
 ---
@@ -32,214 +46,70 @@ Plateforme intelligente de diagnostic phytosanitaire, valorisation post-récolte
 
 ---
 
-##  Structure du Projet
-
-```
-Projet-Eco-Agronomist-IA-Backend/
-├── 📁 .github/                         # CONFIGURATION CI/CD (GitHub Actions)
-│   └── 📁 workflows/
-│       ├── ci-tests.yml                # Tests auto à chaque Push/PR
-│       └── cd-deploy.yml               # Déploiement auto (Docker Build & Push)
-│
-├── 📁 src/                                    # Service 1 : CODE SOURCE PRINCIPAL
-│   ├── api/                                   # API FastAPI
-│   │   ├── v1/
-│   │   │   ├── endpoints/                     # Routes (Controllers)
-│   │   │   │   ├── __init__.py
-│   │   │   │   ├── health.py
-│   │   │   │   ├── detection_diseases.py
-│   │   │   │   ├── detection_anomalies.py
-│   │   │   │   ├── reports.py
-│   │   │   │   ├── scoring.py
-│   │   │   │   ├── advisor.py                 # RAG
-│   │   │   │   └── auth.py
-│   │   │   │
-│   │   │   ├── services/                      # Logique Métier
-│   │   │   │   ├── __init__.py
-│   │   │   │   ├── external/                  # APIs & Cloud
-│   │   │   │   │   ├── __init__.py
-│   │   │   │   │   ├── storage_service.py
-│   │   │   │   │   ├── model_huggingface.py
-│   │   │   │   │   └── mlflow_client.py
-│   │   │   │   └── internal/                  # Orchestration interne
-│   │   │   │       ├── __init__.py
-│   │   │   │       ├── image_analysis.py
-│   │   │   │       └── rag_orchestrator.py
-│   │   │   │
-│   │   │   ├── schemas/                       # Pydantic (Validation)
-│   │   │   │   ├── __init__.py
-│   │   │   │   ├── auth.py
-│   │   │   │   ├── detection.py
-│   │   │   │   ├── scoring.py
-│   │   │   │   ├── request.py
-│   │   │   │   └── response.py
-│   │   │   │
-│   │   │   ├── dependencies/                  # Injection de dépendances
-│   │   │   │   ├── __init__.py
-│   │   │   │   ├── auth_deps.py
-│   │   │   │   └── service_deps.py
-│   │   │   │
-│   │   │   ├── security/                      # Sécurité & JWT
-│   │   │   │   ├── __init__.py
-│   │   │   │   ├── jwt.py
-│   │   │   │   ├── password.py
-│   │   │   │   └── access_control.py
-│   │   │   │
-│   │   │   └── middleware/                    # Intercepteurs
-│   │   │       ├── __init__.py
-│   │   │       ├── logging.py
-│   │   │       └── cors.py
-│   │   │
-│   │   ├── main.py                            # Point d'entrée FastAPI
-│   │   └── utils/
-│   │       ├── __init__.py
-│   │       └── errors.py
-│   │
-│   │
-│   ├── ml/                                    # MOTEUR IA
-│   │   ├── training/                          # Scripts pour Kaggle
-│   │   │   ├── disease_detector/
-│   │   │   └── anomaly_detector/
-│   │   ├── inference/                         # Utilisé par l'API (Production)
-│   │   │   ├── disease_predictor.py           # Load model from MLflow
-│   │   │   └── anomaly_predictor.py
-│   │   └── preprocessing/
-│   │       ├── image_processor.py             # Utils Spark/Inference
-│   │       └── label_validator.py
-│   │
-│   ├── rag/                                   # PHASE 3 - SYSTÈME RAG
-│   │   ├── retriever.py                       # Ingestion PDF
-│   │   ├── generator.py                       # LLM Response
-│   │   └── knowledge_base/                    # Docs ONSSA
-│   │
-│   ├── database/                              # COUCHE DONNÉES
-│   │   ├── __init__.py
-│   │   ├── database.py                        # Configuration & Engine
-│   │   ├── models/                            # ORM Models (SQLAlchemy)
-│   │   │   ├── __init__.py
-│   │   │   ├── user.py
-│   │   │   ├── supplier.py
-│   │   │   ├── batch.py
-│   │   │   └── detection_result.py
-│   │   └── repository/                        # Design Pattern Repository
-│   │       ├── __init__.py
-│   │       ├── user_repository.py
-│   │       └── detection_repository.py
-│   ├── Dockerfile.api              # Image avec Python + Ultralytics (YOLO)
-│   ├── requirements.txt
-│   └── utils/                                # Utilitaires globaux
-│
-│                               
-├── 📁  airflow/  
-│   ├── Dockerfile.airflow          # Image avec Java 11 + PySpark
-│   ├── requirements-spark.txt                             # Service 2 - ORCHESTRATION (Medallion)
-│   ├── dags/
-│   │   └── medallion_data_pipeline.py     # DAG Principal
-│   └── tasks/
-│       ├── bronze_ingestion.py            # Raw -> Bronze
-│       ├── silver_transformation.py       # Bronze -> Silver (Spark)
-│       ├── gold_finalization.py           # Silver -> Gold (Spark)
-│       └── kaggle_uploader.py             # Export Gold to Kaggle
-│
-├── 📁 data/                                   # STOCKAGE MEDALLION (Local/S3)
-│   ├── raw/                                   # Données brutes
-│   ├── bronze/                                # Landing zone
-│   ├── silver/                                # Données nettoyées (Agadir)
-│   └── gold/                                  # Données ML Ready (Kaggle export)
-│
-├── 📁 config/                                 # CONFIGURATION
-│   ├── __init__.py
-│   ├── settings.py                            # Load .env (load_dotenv)
-│   ├── mlflow_config.py
-│   └── logging.yaml
-│
-├── 📁 notebooks/                              # EXPÉRIMENTATIONS
-│   ├── disease_training_kaggle.ipynb
-│   └── mlflow_experiments/
-│
-├── 📁 scripts/                                # SCRIPTS UTILITAIRES
-│   ├── init_db.py
-│   └── setup_mlflow.py
-│
-
-├── 📁 tests/                                 # Tests unitaires & intégration
-│   ├── unit/
-│   └── integration/
-│
-│
-├── 📁 logs/                                  # Logs
-│   ├── airflow/
-│   └── api/
-│                                 
-├── 📄 .env.example                  # template Variables d'environnement
-├── 📄 .gitignore
-├── 📄 docker-compose.yml
-└── 📄 README.md
-
-```
-
----
-
-Voici l'architecture complète, finalisée et prête pour la production. Elle intègre les **microservices**, la partie **IA/ML**, l'architecture **Medallion**, ainsi qu'une structure robuste pour les **Tests** et le **CI/CD**.
-
-### 1. Structure Complète du Projet (Monorepo Microservices)
+## 📂 Structure du Projet
 
 ```text
 Projet-Eco-Agronomist-IA-Backend/
-│
-├── 📁 .github/                         # CONFIGURATION CI/CD (GitHub Actions)
-│   └── 📁 workflows/
-│       ├── ci-tests.yml                # Tests auto à chaque Push/PR
-│       └── cd-deploy.yml               # Déploiement auto (Docker Build & Push)
-│
-├── 📁 services/                        # DOSSIER DES MICROSERVICES
-│   │
-│   ├── 📁 data-processing-service/     # MICROSERVICE 1: AIRFLOW + SPARK
-│   │   ├── Dockerfile.airflow          # Image avec Java 11 + PySpark
-│   │   ├── requirements-spark.txt
-│   │   ├── 📁 airflow/
-│   │   │   ├── 📁 dags/                # Pipeline Medallion
-│   │   │   └── 📁 tasks/               # Bronze, Silver, Gold, Kaggle
-│   │   └── 📁 tests/                   # Tests spécifiques au traitement Spark
-│   │
-│   └── 📁 api-inference-service/       # MICROSERVICE 2: FASTAPI + ML + RAG
-│       ├── Dockerfile.api              # Image avec Python + Ultralytics (YOLO)
-│       ├── requirements.txt
-│       ├── main.py                     # Entrée FastAPI
-│       ├── 📁 src/
-│       │   ├── 📁 api/                 # Endpoints, Services, Schemas
-│       │   ├── 📁 ml/                  # Inference (MLflow) & Preprocessing
-│       │   ├── 📁 rag/                 # Retrieval Augmented Generation
-│       │   ├── 📁 database/            # Models & Repositories
-│       │   └── 📁 security/            # JWT & RBAC
-│       └── 📁 tests/                   # Tests API, Unitaires & Intégration
-│
-├── 📁 shared_config/                   # CONFIGURATION PARTAGÉE
-│   ├── settings.py                     # Singleton load_dotenv
-│   └── logging.yaml
-│
-├── 📁 notebooks/                #  LES NOTEBOOKS KAGGLE 
-│   ├── disease_training.ipynb   # Notebook pour l'entraînement des maladies
-│   ├── anomaly_training.ipynb   # Notebook pour l'entraînement des anomalies
-│   └── experiments/             # Tests de modèles, visualisations, etc.
-│
-├── 📁 data/                                   # STOCKAGE MEDALLION                                
-│   ├── bronze/                                # Données brutes
-│   ├── silver/                                # Données nettoyées (Agadir)
-│   └── gold/                                  # Données ML Ready (Kaggle export)/
-│
-├── 📁 scripts/                         # SCRIPTS DE MAINTENANCE GLOBAL
-│   ├── init_db.py
-│   └── seed_data.py
-│
-├── 📄 .env.example                     # Modèle pour l'équipe
-├── 📄 .gitignore                       # Exclut data/, .env, logs/, __pycache__/
-├── 📄 docker-compose.yml               # Orchestrateur local
-├── 📄 pytest.ini                       # Configuration des tests
-└── 📄 README.md
+├── .github/workflows/ci-cd.yml         # CI/CD (GitHub Actions)
+├── data/                                # Stockage Medallion (Raw, Bronze, Silver)
+│   ├── raw/RAG/                         # Corpus ONSSA (PDF)
+│   ├── bronze/                          # Ingestion initiale
+│   └── silver/                          # Données nettoyées & ML Ready
+├── data_processing/                     # Service : TRAITEMENT DE DONNÉES & AIRFLOW
+│   ├── airflow/                         # Orchestration (DAGs & Tasks)
+│   │   ├── dags/                        # data_pipeline.py, roboflow-prep-dag.py
+│   │   └── tasks/                       # Ingestion, Spark, Kaggle Uploader, etc.
+│   ├── Dockerfile.airflow               # Image Airflow + Spark
+│   ├── rag_ingest.py                    # Ingestion documents RAG
+│   └── requirements-spark.txt           # Dépendances Spark
+├── src/                                 # Service : API & IA
+│   ├── ai/
+│   │   ├── ml/                          # Entraînement & Nettoyage (YOLOv8, notebooks)
+│   │   └── rag/
+│   │       └── engine.py                # Moteur RAG (Pinecone + Groq)
+│   ├── api/
+│   │   ├── main.py                      # Entrée FastAPI
+│   │   └── v1/
+│   │       ├── crud/                    # diagnostic_crud, lot_crud, user_crud, etc.
+│   │       ├── routers/                 # auth, diagnostic, production, rag, etc.
+│   │       ├── schemas/                 # Modèles Pydantic (LotRecolte, etc.)
+│   │       ├── services/                # rag_service.py
+│   │       ├── dependencies/            # DB, User
+│   │       └── middleware/              # CORS
+│   ├── core/
+│   │   └── config.py                    # Configuration (load_dotenv)
+│   ├── database/
+│   │   ├── database.py                  # Session SQLAlchemy
+│   │   └── models/                      # users.py, diagnostics_table.py, etc.
+│   ├── Dockerfile.api                   # Image API + YOLO
+│   └── requirements.txt
+├── tests/                               # Tests Automatisés
+│   ├── test_basic.py
+│   ├── test_preprocessing.py
+│   └── test_unit.py
+├── notebook/                            # Expérimentations & Vizualisation
+├── docs/                                # Conception, Modélisation, Planning
+├── pyproject.toml                       # Dépendances (uv)
+└── uv.lock
 ```
 
 ---
+### 1. Configuration de Pinecone (Base Vectorielle)
+
+Pour le système RAG, nous utilisons Pinecone pour stocker les embeddings.
+
+#### Accès API
+1. Créez un compte sur [Pinecone](https://www.pinecone.io/).
+2. Récupérez votre `PINECONE_API_KEY` et le nom de votre index `PINECONE_INDEX_NAME`.
+3. Assurez-vous d'utiliser une dimension de **384** (si vous utilisez `paraphrase-multilingual-MiniLM-L12-v2`).
+
+#### Variables d'environnement
+Ajoutez-les au fichier `.env` :
+```bash
+PINECONE_API_KEY=votre_cle_api
+PINECONE_INDEX_NAME=nom_de_l_index
+GROQ_API_KEY=votre_cle_api_groq
+```
 
 ### 2. Stratégie de Tests (Qualité Logicielle)
 
@@ -365,9 +235,10 @@ API_HOST=0.0.0.0
 API_PORT=8000
 API_DEBUG=false
 
-# Airflow
-AIRFLOW_HOME=/home/airflow
-AIRFLOW__CORE__DAGS_FOLDER=/src/airflow/dags
+# RAG & AI
+PINECONE_API_KEY=...
+PINECONE_INDEX_NAME=...
+GROQ_API_KEY=...
 
 # Logging
 LOG_LEVEL=INFO
@@ -383,31 +254,18 @@ git clone <repository-url>
 cd Projet-Eco-Agronomist-IA-Backend
 ```
 
-### 2. Créer un environnement virtuel
+### 2. Installer `uv`
+Ce projet utilise [uv](https://github.com/astral-sh/uv) pour la gestion des dépendances.
 ```bash
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# ou
-venv\Scripts\activate  # Windows
+# Windows
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+# Linux/Mac
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
 ### 3. Installer les dépendances
-
 ```bash
-# Dépendances principales
-pip install -r requirements.txt
-
-# Dépendances ML (TensorFlow, YOLOv8, MLflow)
-pip install -r requirements-ml.txt
-
-# Dépendances Airflow (optionnel)
-pip install -r requirements-airflow.txt
-
-# Dépendances PySpark (optionnel)
-pip install -r requirements-spark.txt
-
-# Dépendances développement
-pip install -r requirements-dev.txt
+uv sync
 ```
 
 ### 4. Configuration Docker Compose
@@ -561,15 +419,14 @@ PHASE 5 (Valorisation)        [        ] ⏳
 
 ## 🧪 Tests
 
+Nous recommandons d'utiliser `uv run python -m pytest` pour s'assurer que le répertoire racine est bien dans le `PYTHONPATH`.
+
 ```bash
-# Tests unitaires
-pytest tests/unit/ -v
+# Lancer tous les tests (Recommandé)
+uv run python -m pytest
 
-# Tests intégration
-pytest tests/integration/ -v
-
-# Avec couverture
-pytest --cov=src/ tests/
+# Tests spécifiques
+uv run python -m pytest tests/test_unit.py
 ```
 
 ---

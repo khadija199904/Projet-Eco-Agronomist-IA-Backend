@@ -1,4 +1,4 @@
-from pydantic import EmailStr, BaseModel, field_validator
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from src.database.models.enums import UserRole
 
@@ -17,8 +17,7 @@ class UserOut(UserBase):
     id: int
     is_active: bool
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class UserUpdate(BaseModel):
     email: Optional[str] = None

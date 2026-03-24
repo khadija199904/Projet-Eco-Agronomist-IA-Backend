@@ -6,9 +6,21 @@ docs/
 logs/
 .python-version
 artifacts/
-data_val_scrap.py
-artifacts/
-data_val_scrap.py
+
+
+
+
+# --- ML & Training ---
+src/ml/runs/
+src/ml/configml
+*.pt
+
+runs/
+mlruns/
+mlflow.db
+
+
+
+src/ai/ml/configml/
 uploads/
-.github/
 
