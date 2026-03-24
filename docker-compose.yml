@@ -119,6 +119,7 @@ services:
       - ./uploads:/app/uploads
       - ./data:/app/data
       - ./.env:/app/.env
+      - ./mlruns:/app/mlruns
     ports:
       - "8000:8000"
     networks:
