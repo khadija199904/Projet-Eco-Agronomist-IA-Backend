@@ -2,6 +2,7 @@
 .env
 data/
 __pycache__/
+.pytest_cache/
 docs/
 logs/
 .python-version

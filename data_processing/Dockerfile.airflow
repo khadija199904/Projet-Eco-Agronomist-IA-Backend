@@ -13,14 +13,13 @@ RUN apt-get update && \
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 
-COPY data-processing/requirements-spark.txt .
+COPY data_processing/requirements-spark.txt .
 
 RUN uv pip install --no-cache --system \
     "apache-airflow-providers-apache-spark" \
     -r requirements-spark.txt \
     --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.7.1/constraints-3.10.txt"
 
-# (Créer les dossiers pour l'architecture Medallion à l'intérieur du conteneur
 RUN mkdir -p /opt/airflow/data/bronze /opt/airflow/data/silver /opt/airflow/data/gold
 
 
