@@ -9,6 +9,7 @@ jobs:
   test-and-lint:
     runs-on: ubuntu-latest
     env:
+      PYTHONPATH: .
       UV_CACHE_DIR: /tmp/.uv-cache
     steps:
       - name: Checkout du code
